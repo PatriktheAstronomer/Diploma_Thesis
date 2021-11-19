@@ -63,6 +63,15 @@ Selection_c.so: /home/mrybar/root/root/include/TBranchCacheInfo.h
 Selection_c.so: /home/mrybar/root/root/include/TBits.h
 Selection_c.so: /home/mrybar/root/root/include/TBrowser.h
 Selection_c.so: /home/mrybar/root/root/include/TBrowserImp.h
+Selection_c.so: /home/mrybar/root/root/include/TSystem.h
+Selection_c.so: /home/mrybar/root/root/include/TInetAddress.h
+Selection_c.so: /home/mrybar/root/root/include/TTimer.h
+Selection_c.so: /home/mrybar/root/root/include/TSysEvtHandler.h
+Selection_c.so: /home/mrybar/root/root/include/TQObject.h
+Selection_c.so: /home/mrybar/root/root/include/TVirtualQConnection.h
+Selection_c.so: /home/mrybar/root/root/include/TInterpreter.h
+Selection_c.so: /home/mrybar/root/root/include/TInterpreterValue.h
+Selection_c.so: /home/mrybar/root/root/include/TTime.h
 Selection_c.so: /home/mrybar/root/root/include/TH1.h
 Selection_c.so: /home/mrybar/root/root/include/TAxis.h
 Selection_c.so: /home/mrybar/root/root/include/TAttAxis.h
@@ -81,5 +90,6 @@ Selection_c.so: /home/mrybar/root/root/include/TH3.h
 Selection_c.so: /home/mrybar/root/root/include/TAtt3D.h
 Selection_c.so: /home/mrybar/root/root/include/TRandom.h
 Selection_c.so: /home/mrybar/root/root/include/Math/TRandomEngine.h
+Selection_c.so: Variables.h
 Selection_c.so: /home/mrybar/root/root/include/RVersion.h /home/mrybar/root/root/include/RConfig.h /home/mrybar/root/root/include/TClass.h /home/mrybar/root/root/include/TDictAttributeMap.h /home/mrybar/root/root/include/TInterpreter.h /home/mrybar/root/root/include/TROOT.h /home/mrybar/root/root/include/TBuffer.h /home/mrybar/root/root/include/TMemberInspector.h /home/mrybar/root/root/include/TError.h /home/mrybar/root/root/include/RtypesImp.h /home/mrybar/root/root/include/TIsAProxy.h /home/mrybar/root/root/include/TFileMergeInfo.h /home/mrybar/root/root/include/TCollectionProxyInfo.h /home/mrybar/root/root/bin/rootcling
 Selection_c__ROOTBUILDVERSION= 6.24/00
