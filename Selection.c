@@ -1,4 +1,5 @@
 #include "Selection.h"
+
 Selection::Selection(TString source, TString treeName, TString type)
 {
 	SetDataType(type);
@@ -15,7 +16,7 @@ void Selection::SetDataType(TString type)
   }
   else if(type =="PbPb"){
 	m_dataType = 1;
-	m_centralityBinsN = 7;
+	m_centralityBinsN = 8;
   }
   else{
 	std::cout << "Unknow data type inserted\n";
@@ -53,26 +54,25 @@ void Selection::SetBranchAddress()
 
 void Selection::BookHistograms()
 {
-   for(int j=1; j<=45; j++){ // 45 bins from 0 to 4.5
-        centralityBins[j-1] = float(j)/10;
-   }
-   for(int k=1; k<=100; k++){ // 50 bins from 0 to 2
-        responseBins[k-1] = float(k)/50;
-   }
-   
-   for(int iCent = 0; iCent <= m_centralityBinsN; iCent++){
+    for(int iCent = 0; iCent < m_centralityBinsN; iCent++){
 	std::vector<TH3F*> helping_vct;
-   	for (auto &var : vars){
+   	for (auto &var : InspectedVars){
 		std::string name = "h3_resp_";
-		name.append(var);
+		name.append(var.m_name);
 		name.append("_cent");
 		name.append(std::to_string(iCent));
-		h_3F = new TH3F(name.data(), ";jet p_{T} [GeV]", sizeof(jetptBins)/sizeof(jetptBins[0]) - 1 , jetptBins, sizeof(responseBins)/sizeof(responseBins[0]) - 1 , responseBins, sizeof(centralityBins)/sizeof(centralityBins[0]) - 1 , centralityBins);
-   		h_3F->Sumw2();
+		name.append("_type");
+		name.append(std::to_string(m_dataType));
+		std::cout << var.m_name << iCent << m_dataType << "\n";
+		h_3F = new TH3F(name.data(), ";jet p_{T} [GeV]", pT.m_bin_count-3, pT.m_bins.data(), response.m_bin_count-3, response.m_bins.data(), var.m_bin_count-3, var.m_bins.data());
+		h_3F->Sumw2();
 		helping_vct.push_back(h_3F);
 	}
+
 	responseCentrVars.push_back(helping_vct);
-   }
+   }   // z vars udelat slozky, protoze potom se mi budou delat lepe projekce, vyberu jednu var, pro ni budu brát centrality
+   // a bin to bin plotit a fitovat Gaussiany
+   // vse pak zapisu do sady matic dle centrality a var!
 }
 
 void Selection::EventLoop(Long64_t nEntries)
@@ -93,15 +93,21 @@ void Selection::EventLoop(Long64_t nEntries)
 				if (fabs(jet_eta->at(j)) > m_eta_veto) continue;
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
-				std::vector<Float_t> inspectedVars = {jet_rtrk->at(j), jet_ntrk->at(j), jet_width->at(j)};			
-				Int_t varCount = inspectedVars.size();				
 
+				std::vector<Float_t> inspectedVars = {jet_rtrk->at(j), jet_ntrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou!			
+				unsigned int varCount = inspectedVars.size();
+
+				if (InspectedVars.size() != varCount){
+					std::cout << "Wrong setup of inspected variables";
+					exit (EXIT_FAILURE);
+				}
+							
         			// if (fabs(truth_jet_flavor->at(j)) == 21 || truth_jet_flavor->at(j) < 0) continue;
 				if (jet_pt->at(j) <= 0 || truth_jet_pt->at(j) <= 0) continue; // matched based distance
-				if (event_Centrality < 0) continue;						
-				for (int k = 0; k < varCount; k++){ 
+				if (event_Centrality < 0) continue;					
+				for (unsigned int k = 0; k < varCount; k++){ 
 					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[j], MC_weight);
-					// pp is written into 0th component of the responseCentrVars, PbPb into 1-7th
+					// pp is written into 0th component of the responseCentrVars, PbPb into 0-7th as pp has the value 0
 				}
 			}
                 }
@@ -112,11 +118,24 @@ void Selection::Write(string outName)
 {
    outName.append(".root");
    TFile *f_out = new TFile(outName.data(), "RECREATE");
-   for (auto &vcts : responseCentrVars){
-	for (auto &histo : vcts){
-        histo->Write();
+   for (unsigned int c = 0; c < responseCentrVars.size(); c++){
+	std::string name = "centrality_";
+	name.append(std::to_string(c));
+	f_out->cd();
+	gDirectory->mkdir(name.data());
+	for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
+		f_out->cd(name.data());
+		gDirectory->mkdir(InspectedVars.at(d).m_name);
+		std::string subdir = name;
+		subdir.append("/");
+		subdir.append(InspectedVars.at(d).m_name);
+		f_out->cd(subdir.data());
+        	responseCentrVars.at(c).at(d)->Write();
 	}
    }
    f_out->Close();
    m_source->Close();
 }
+
+// stejne jako v Dump budu 3D histogramy cist a delat z nich projekce!!! (Na to bude jeste CPP kod, fitovani a pocitani s histos pak bude uz v Pythonu
+// gSystem vyuziju k tomu asi...

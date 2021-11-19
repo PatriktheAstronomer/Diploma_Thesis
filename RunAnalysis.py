@@ -4,17 +4,17 @@ from ROOT import TFile
 import math
 from math import *
 import uproot
-
-import PloFitter # my own module, which derives histograms and statistics
+import numpy as np
+from matplotlib import pyplot as plt
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
 input_ppdata = "user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
-preselected_PbPbdata = ""
-preselected_ppdata = ""
+preselected_PbPbdata = "PbPb_test_2.root"
+preselected_ppdata = "pp_test_2.root"
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
-run_number = 0
+run_number = 2
 
 doCompile = True # flag variable declaring, which macros should be compiled and which not
 doSelection = True # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
@@ -28,19 +28,23 @@ if __name__ == '__main__':
 
 	print ("Headers declaration...")
 	ROOT.gInterpreter.Declare('#include "Selection.h"')
+	ROOT.gInterpreter.Declare('#include "Variables.h"')
 
 	f.write("doCompile flag set to "+str(doCompile)+"\n")
 	if doCompile:
 		print ("Macros compiling...")
 		ROOT.gSystem.CompileMacro("Selection.c")
+		ROOT.gSystem.CompileMacro("Variables.c")
 	else:
 		print ("Macros loaded as compiled")
-		ROOT.gSystem.CompileMacro("Selection_c.so")
+		ROOT.gSystem.Load("Selection_c.so")
+		ROOT.gSystem.Load("Variables_c.so")
 
 	f.write("doSelection flag set to "+str(doSelection)+"\n")
 	if doSelection:
 		from ROOT import Selection
-
+		from ROOT import Variables
+		
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
 	
@@ -50,21 +54,24 @@ if __name__ == '__main__':
 		pp_selection.BookHistograms()
 		PbPb_selection.BookHistograms()
 
-		pp_selection.EventLoop()                  
-		PbPb_selection.EventLoop()
+		pp_selection.EventLoop(50000)                  
+		PbPb_selection.EventLoop(50000)
 
 		pp_selection.Write(output_folder+"pp_test_0")
 		PbPb_selection.Write(output_folder+"PbPb_test_0")
+#Statistics
+#	with uproot.open(output_folder+preselected_PbPbdata) as PbPb_data:
+#		for key in PbPb_data:
+#			print(PbPb_data[key].values())
 
-	else: 
-		pp_selected = uproot.open(preselected_ppdata)[treeName]
-		PbPb_selected = uproot.open(preselected_PbPbdata)[treeName]
-
+	# change structure after implementation of Variables class... then for each var, for each centrality prepare matrix var_val vs. pT
+			
 	f.write("doML flag set to "+str(doML)+"\n")
 
 	#if doML:
 
 	#ML-training on the pp_training
+	
 	# bude potreba skalarni vstup
 	# Zde bude dulezita aplikace nastavenych parametru NN
 
