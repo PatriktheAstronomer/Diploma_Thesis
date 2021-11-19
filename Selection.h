@@ -5,6 +5,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TBrowser.h"
+#include "TSystem.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
@@ -13,10 +14,11 @@
 #include <string>
 #include <iostream>
 
+#include "Variables.h"
 
-class Selection
+class Selection: public Variables
 {
-private:
+protected:
 	TFile *m_source;
 	TString m_treeName; 	
 	TTree *m_tree;
@@ -25,8 +27,6 @@ private:
 	Float_t m_eta_veto = 2.8;
 	bool m_dataType;
 	Long64_t m_nEntries;
-	
-protected:
 	Int_t event_Centrality;
 	double MC_weight;
 	std::vector<Float_t> * jet_eta = 0;
@@ -37,14 +37,17 @@ protected:
 	std::vector<Float_t> * truth_jet_pt = 0;
 	std::vector<Int_t> * truth_jet_flavor = 0;
 
-	Float_t centralityBins[45];
-	Float_t responseBins[100];
-	Float_t jetptBins[28]={42.5, 47.5, 53, 59.5, 67, 75, 84, 94.5, 106, 119, 133.5, 149.5, 168, 189, 212, 237.5, 266.5, 299, 335.5, 376.5, 422.5, 474, 531.5, 596.5, 669.5, 751, 842.5, 945.5};
-        //logarithmic binning
-
 	TH3F * h_3F = nullptr;
-	std::vector<std::string> vars = {"jet_rtrk", "jet_ntrk", "jet_width"};
 	std::vector<std::vector<TH3F*>> responseCentrVars;
+
+ 	//variables declaration --- handtyped
+        Variables pT = Variables("pT", 10, 1000);
+        Variables response = Variables("response", 50, 0, 2);
+
+        Variables ntrk = Variables("ntrk", 20, 0, 20);
+        Variables rtrk = Variables("rtrk", 20, 0, 1);
+        Variables width = Variables("width", 20, 0, 1);
+        std::vector<Variables> InspectedVars = {ntrk, rtrk, width};
 
 public:
 	Selection(TString source, TString treeName, TString type);
