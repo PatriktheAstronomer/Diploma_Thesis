@@ -70,9 +70,9 @@ void Selection::BookHistograms()
 	}
 
 	responseCentrVars.push_back(helping_vct);
-   }   // z vars udelat slozky, protoze potom se mi budou delat lepe projekce, vyberu jednu var, pro ni budu brát centrality
-   // a bin to bin plotit a fitovat Gaussiany
-   // vse pak zapisu do sady matic dle centrality a var!
+   } 
+   // a bin to bin plotit promenne...
+   // vse pak zapisu do sady matic dle centrality a var! --- 1 sada pro meany a druha pro sigmy
 }
 
 void Selection::EventLoop(Long64_t nEntries)
@@ -94,7 +94,7 @@ void Selection::EventLoop(Long64_t nEntries)
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
-				std::vector<Float_t> inspectedVars = {jet_rtrk->at(j), jet_ntrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou!			
+				std::vector<Float_t> inspectedVars = {jet_ntrk->at(j), jet_rtrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
 				unsigned int varCount = inspectedVars.size();
 
 				if (InspectedVars.size() != varCount){
@@ -125,17 +125,9 @@ void Selection::Write(string outName)
 	gDirectory->mkdir(name.data());
 	for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
 		f_out->cd(name.data());
-		gDirectory->mkdir(InspectedVars.at(d).m_name);
-		std::string subdir = name;
-		subdir.append("/");
-		subdir.append(InspectedVars.at(d).m_name);
-		f_out->cd(subdir.data());
         	responseCentrVars.at(c).at(d)->Write();
 	}
    }
    f_out->Close();
    m_source->Close();
 }
-
-// stejne jako v Dump budu 3D histogramy cist a delat z nich projekce!!! (Na to bude jeste CPP kod, fitovani a pocitani s histos pak bude uz v Pythonu
-// gSystem vyuziju k tomu asi...

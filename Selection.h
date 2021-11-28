@@ -18,7 +18,7 @@
 
 class Selection: public Variables
 {
-protected:
+public:
 	TFile *m_source;
 	TString m_treeName; 	
 	TTree *m_tree;
@@ -40,7 +40,7 @@ protected:
 	TH3F * h_3F = nullptr;
 	std::vector<std::vector<TH3F*>> responseCentrVars;
 
- 	//variables declaration --- handtyped
+ 	//variables declaration ------------------------ handtyped
         Variables pT = Variables("pT", 10, 1000);
         Variables response = Variables("response", 50, 0, 2);
 
@@ -49,7 +49,8 @@ protected:
         Variables width = Variables("width", 20, 0, 1);
         std::vector<Variables> InspectedVars = {ntrk, rtrk, width};
 
-public:
+	// end of the declaration --------------------------------
+
 	Selection(TString source, TString treeName, TString type);
 	void SetSource(TString source);
 	void SetTreeName(TString treeName);
