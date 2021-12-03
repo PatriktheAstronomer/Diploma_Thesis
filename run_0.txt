@@ -1,4 +1,0 @@
-Run number 0 file: 
-doCompile flag set to True
-doSelection flag set to False
-doML flag set to False
