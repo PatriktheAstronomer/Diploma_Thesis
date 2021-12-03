@@ -57,22 +57,23 @@ void Selection::BookHistograms()
     for(int iCent = 0; iCent < m_centralityBinsN; iCent++){
 	std::vector<TH3F*> helping_vct;
    	for (auto &var : InspectedVars){
-		std::string name = "h3_resp_";
+		std::string name = "";
 		name.append(var.m_name);
 		name.append("_cent");
 		name.append(std::to_string(iCent));
 		name.append("_type");
 		name.append(std::to_string(m_dataType));
-		std::cout << var.m_name << iCent << m_dataType << "\n";
 		h_3F = new TH3F(name.data(), ";jet p_{T} [GeV]", pT.m_bin_count-3, pT.m_bins.data(), response.m_bin_count-3, response.m_bins.data(), var.m_bin_count-3, var.m_bins.data());
+		h_3F->GetXaxis()->SetTitle("pT");
+		h_3F->GetYaxis()->SetTitle(var.m_name);
+		h_3F->GetZaxis()->SetTitle("response");
 		h_3F->Sumw2();
 		helping_vct.push_back(h_3F);
 	}
 
 	responseCentrVars.push_back(helping_vct);
    } 
-   // a bin to bin plotit promenne...
-   // vse pak zapisu do sady matic dle centrality a var! --- 1 sada pro meany a druha pro sigmy
+      
 }
 
 void Selection::EventLoop(Long64_t nEntries)
