@@ -18,6 +18,7 @@ public:
 	Variables();
 	Variables(TString name, Int_t bin_count, Float_t lower_range, Float_t upper_range);
 	Variables(TString name, Float_t lower_range, Float_t upper_range);
+	Variables(TString name, std::vector<Float_t> bins);
 	void SetName(TString name);
 	void CalculateLogBins(Float_t lower_range, Float_t upper_range);
 	void CalculateUniBins(Int_t bin_count, Float_t lower_range, Float_t upper_range);

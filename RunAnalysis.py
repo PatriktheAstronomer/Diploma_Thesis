@@ -5,6 +5,7 @@ import math
 from math import *
 import uproot
 import numpy as np
+#import pandas as pd
 from matplotlib import pyplot as plt
 from Process_histos import *
 
@@ -12,7 +13,7 @@ input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
 input_ppdata = "user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
 preselected_PbPbdata = "PbPb_test_2.root"
-preselected_ppdata = "pp_test_2.root"
+preselected_ppdata = "pp_test_0.root"
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 5
@@ -67,20 +68,16 @@ if __name__ == '__main__':
 	f.write("calculateStats flag set to "+str(calculateStats)+"\n")
 	if calculateStats:
 
-# JES/JER
-#---> To si vyrobim ze specialniho 2D histogramu, co si necham bokem v Selection... ten bude jen pT vs response
-
-# Correlation matrix
-		GenerateCorrMatrices(output_folder+"PbPb_test_0.root", output_folder)
-		GenerateCorrMatrices(output_folder+"pp_test_0.root", output_folder)		
-# Machine learning part, creation of scalar training dataset			
+# Correlation matrix and JES/JER production
+		GenerateCorrMatrices(output_folder, "PbPb_test_0.root", output_folder)
+		GenerateCorrMatrices(output_folder, "pp_test_0.root", output_folder)	
+	
+# Machine learning part, creation of scalar training dataset ----> via a function in preselection??			
 	f.write("doML flag set to "+str(doML)+"\n")
 	if doML:
-		with uproot.open(output_folder+preselected_PbPbdata) as PbPb_data:
-			for key in PbPb_data:
-				print(PbPb_data[key].values())
-
-
+		with uproot.open(input_folder+input_ppdata) as pp_data:
+			for key in pp_data:
+				print(np.asarray(pp_data[key].values()))
 
 	#ML-training on the pp_training
 	# KERAS, budeme pocitat na GPU farme CERNu	
@@ -93,7 +90,7 @@ if __name__ == '__main__':
 	# mozne vyuzity kodu od Jennifer
 
 #Correlation test in repaired PbPb data
-	# Vypocet JES a JER map, pro neopravena i opravena data 
-	# vyplotim si pres sebe Gaussiany (logaritmicke) oproti raw selekci
-	# ! pokud je doML, tak volam porovnani,	jinak dostanu prazdny hist po oprave...
-	# porovnavat numericke vysledky pro ruzna run_numbers...na to bude specialni fce...Compare done tests... i implementace CI
+	# Vypocet JES a JER map opravena data 
+	# vyplotim si pres sebe Gaussiany (logaritmicke) oproti raw selekci ---> funkce compare datafiles!
+	# porovnavat numericke vysledky pro ruzna run_numbers... Statistika, jak se zlepsuje performance site
+	# ROC curve

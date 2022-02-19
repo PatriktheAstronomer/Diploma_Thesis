@@ -39,6 +39,22 @@ void Selection::GetTTree()
  m_nEntries = m_tree->GetEntries();
 }
 
+
+/* under development---> scalar datasets generator
+
+void Selection::FormScalarSample(TString outname)
+{
+ scalarFileName = outname;
+ TFile o("/home/novotnyp/Thesis/LearningSamples/400_ntrkPouze.root", "recreate");
+ TTree *t2 = new TTree("training_MLP", "");
+
+ // plnit se bude v eventloopu, pokud to urcita promenna dovoli...treba, ze je nenulovy pointer na output tree ?
+
+}
+
+---> scalar generator ends
+*/
+
 void Selection::SetBranchAddress()
 {
    m_tree->SetBranchAddress("MC_weight",&MC_weight);
@@ -51,6 +67,21 @@ void Selection::SetBranchAddress()
    m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
    m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
 }
+
+void Selection::SetBranchAddress_Scalar()
+{
+
+   m_treeout->SetBranchAddress("MC_weight_scalar",&MC_weight_scalar); // of course MC_weight is scalar all the time, however there each occurance of this value is multiplied by jet size
+   m_treeout->SetBranchAddress("jet_eta_scalar",&jet_eta_scalar);
+   m_treeout->SetBranchAddress("jet_pt_scalar",&jet_pt_scalar);
+   m_treeout->SetBranchAddress("jet_ntrk_scalar",&jet_ntrk_scalar);
+   m_treeout->SetBranchAddress("jet_rtrk_scalar",&jet_rtrk_scalar);
+   m_treeout->SetBranchAddress("jet_width_scalar",&jet_width_scalar);
+   m_treeout->SetBranchAddress("truth_jet_pt_scalar",&truth_jet_pt_scalar);
+   m_treeout->SetBranchAddress("truth_jet_flavor_scalar",&truth_jet_flavor_scalar);
+}
+// to be used in the scalar generator ---> Opt in Event loop between fill histos and produce preselected scalar dataset  !!!
+
 
 void Selection::BookHistograms()
 {
@@ -70,7 +101,6 @@ void Selection::BookHistograms()
 		h_3F->Sumw2();
 		helping_vct.push_back(h_3F);
 	}
-
 	responseCentrVars.push_back(helping_vct);
    } 
       
@@ -95,7 +125,7 @@ void Selection::EventLoop(Long64_t nEntries)
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
-				std::vector<Float_t> inspectedVars = {jet_ntrk->at(j), jet_rtrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
+				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_rtrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
 				unsigned int varCount = inspectedVars.size();
 
 				if (InspectedVars.size() != varCount){

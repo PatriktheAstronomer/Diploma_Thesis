@@ -15,6 +15,13 @@ Variables::Variables(TString name, Float_t lower_range, Float_t upper_range)
 	SetBinCount();
 }
 
+Variables::Variables(TString name, std::vector<Float_t> bins)
+{
+        SetName(name);
+        m_bins = bins;
+        SetBinCount();
+}
+
 void Variables::SetName(TString name)
 {
 	m_name = name;
