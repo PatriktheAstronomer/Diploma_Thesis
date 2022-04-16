@@ -1,7 +1,12 @@
 from ROOT import TFile, gROOT, TH3, TH2D, TH1D, TF1, TCanvas, TLegend, TLatex
 import numpy as np
 
+import sys
+sys.path.insert(0, '/home/novotnyp/Diploma_Thesis/lib')
+from TH1_style import *
+
 def GenerateCorrMatrices(inputdir, source, outdir):
+	print("Generating correlation matrices")
 	f = TFile(inputdir+source)
 	histos, spectra_mu, spectra_sigma = list(), list(), list()
 	for key in f.GetListOfKeys(): #read list of subdirs from TFile
@@ -11,19 +16,19 @@ def GenerateCorrMatrices(inputdir, source, outdir):
 		for key2 in dirs.GetListOfKeys(): #read list of keys from each TDirectory
 			cl = gROOT.GetClass(key2.GetClassName())
 			if not cl.InheritsFrom("TH3"):  continue
+			print("3D matrix processed: "+key2.ReadObj().GetName())
 			if "eta" in key2.ReadObj().GetName() and "PbPb" in source: # key2.ReadObj() returns TH3 classes			
 				mu, sigma = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+				spectra_mu.append(mu)
+				spectra_sigma.append(sigma)
 			#vectors of TH1s for each eta is returned
-			#corr_JES, corr_JER = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
-			#histos.append(corr_JES)
-			#histos.append(corr_JER)
-		if "PbPb" in source:
-			spectra_mu.append(mu)
-			spectra_sigma.append(sigma)
-	if len(spectra_mu) != 0:
+			corr_JES, corr_JER = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+			histos.append(corr_JES)
+			histos.append(corr_JER)
+	if len(spectra_mu) != 0:		
 		DrawJESnR(spectra_mu, "JES", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
 		DrawJESnR(spectra_sigma, "JER", outdir)
-	#WriteIn(histos, outdir, source)
+	WriteIn(histos, outdir, source)
 
 def PrepareJESnR(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over eta
@@ -55,12 +60,12 @@ def DrawJESnR(matrix_input, type, outdir):
 		legend = TLegend(0.6,0.7,0.85,0.9)
 		legend.SetFillColor(0)
 		legend.SetBorderSize(1)
-		#SetHStyle(centrs[0], 0)
+		SetHStyle(centrs[0], 0)
 		outname = centrs[0].GetName()
 
 		if type == "JES":
 			outname = "JES_"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.86,0.99)
+			centrs[0].GetYaxis().SetRangeUser(0.9,1.05)
 			centrs[0].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
 		if type == "JER":	
 			outname = "JER_"+outname
@@ -72,7 +77,7 @@ def DrawJESnR(matrix_input, type, outdir):
 		centrs[0].Draw("9")
 		
 		for i in range (1, len(centrs)):
-			#SetHStyle(centrs[i], i)
+			SetHStyle(centrs[i], i)
 			legend.AddEntry(centrs[i], "Centrality = "+str(i*10)+"-"+str((i+1)*10)+"%", "l")
 			centrs[i].Draw("9 SAME")
         
@@ -88,13 +93,50 @@ def DrawJESnR(matrix_input, type, outdir):
 		c.Print(outdir+"JESnJER/"+outname+".pdf")
 		c.Close()
 
+# backup - single JES/JER plotter for debugging porposes only
+
+def deb_helper(matrix_input, type, outdir):
+	matrix_transp = transpose_list(matrix_input)
+	for centrs in matrix_transp:
+		for i in range (1, len(centrs)):
+			c = TCanvas("C1","",800,600)
+			c.SetLogx()
+			SetHStyle(centrs[i], 0)
+			outname = centrs[i].GetName()
+
+			print("Debuggovaci vystup pro histogramy")
+			print(centrs[i].GetName() + " i is equal to " + str(i))
+
+			if type == "JES":
+				outname = "JES_"+outname
+				centrs[i].GetYaxis().SetRangeUser(0.9,1.05)
+				centrs[i].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
+			if type == "JER":
+				outname = "JER_"+outname
+				centrs[i].GetYaxis().SetRangeUser(0.0,0.4)
+				centrs[i].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")
+			centrs[i].GetXaxis().SetTitle("p_{T} [GeV]")
+			centrs[i].Draw("9")
+			
+			eta_interval = TLatex()
+			eta_interval.SetTextFont(43)
+			eta_interval.SetTextSize(28)
+			eta_interval.SetNDC() #coordinates setup
+			eta_interval.DrawLatex(0.18,0.2,outname) #title
+
+			c.Print(outdir+"JESnJER/"+outname+"_"+str(i)+".pdf")
+			c.Close()
+
+# end of debugging function, which will be erased
+
+
 def Make3DProjection(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over var_vals
 	nxbins = h_3F.GetNbinsX() #projection over pT
 	z_bins = np.asarray(h_3F.GetZaxis().GetXbins())
 	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
 	corr_JES = TH2D("JES", "JES", nxbins, x_bins, nzbins, z_bins)
-	corr_JES.SetStats(0)
+	corr_JES.SetStats(0);	
 	corr_JER = TH2D("JER", "JER", nxbins, x_bins, nzbins, z_bins)
 	corr_JER.SetStats(0)
 	for jz in range(nzbins):
@@ -111,6 +153,10 @@ def Make3DProjection(h_3F, name, outdir):
 	corr_JES.GetZaxis().SetRangeUser(0.8,1.2)
 	corr_JER.SetName("JER_"+name)
 	corr_JES.SetName("JES_"+name)
+	corr_JER.GetXaxis().SetTitle("pT [GeV]")
+	corr_JER.GetYaxis().SetTitle(name)
+	corr_JES.GetXaxis().SetTitle("pT [GeV]")
+	corr_JES.GetYaxis().SetTitle(name)
 	Draw(corr_JER, outdir+"matrices/JER_"+name+".png")
 	Draw(corr_JES, outdir+"matrices/JES_"+name+".png")		
 	return corr_JES, corr_JER
@@ -131,8 +177,7 @@ def FitResponse(ySlice, outname, pTt):
 
 def Draw(h_2F, outname):
 	c = TCanvas("C1","",800,600)
-	#c.SetLogx()
-	#c.SetLogy()
+	c.SetLogx()
 	h_2F.Draw("colz")
 	c.Print(outname)
 

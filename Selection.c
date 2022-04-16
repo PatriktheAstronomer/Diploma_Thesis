@@ -8,6 +8,23 @@ Selection::Selection(TString source, TString treeName, TString type)
 	GetTTree();
 }
 
+Selection::Configure(TString variables_data, TString vetos_data)
+{
+// Under development
+/*
+zde pres fstream nactu data o variables, vytvorim variables a nakonec
+je push_backnu do InspectedVars
+*/
+	ifstream infile;
+	infile.open(variables_data);
+	infile >> data;
+	cout << data << endl;
+	infile.close();
+// pouze pro debugging, nejprve odladit co načítám za stringy
+// ---> zacnu jako separe kod bokem
+
+}
+
 void Selection::SetDataType(TString type)
 {
   if(type == "pp"){
@@ -39,21 +56,13 @@ void Selection::GetTTree()
  m_nEntries = m_tree->GetEntries();
 }
 
-
-/* under development---> scalar datasets generator
-
 void Selection::FormScalarSample(TString outname)
 {
- scalarFileName = outname;
- TFile o("/home/novotnyp/Thesis/LearningSamples/400_ntrkPouze.root", "recreate");
- TTree *t2 = new TTree("training_MLP", "");
-
- // plnit se bude v eventloopu, pokud to urcita promenna dovoli...treba, ze je nenulovy pointer na output tree ?
-
+ m_outfile = new TFile(outname, "recreate");
+ m_treeout = new TTree("training_dataset", "");
+ CreateBranchScalar();
+ training_flag = true;
 }
-
----> scalar generator ends
-*/
 
 void Selection::SetBranchAddress()
 {
@@ -68,20 +77,19 @@ void Selection::SetBranchAddress()
    m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
 }
 
-void Selection::SetBranchAddress_Scalar()
+void Selection::CreateBranchScalar()
 {
-
-   m_treeout->SetBranchAddress("MC_weight_scalar",&MC_weight_scalar); // of course MC_weight is scalar all the time, however there each occurance of this value is multiplied by jet size
-   m_treeout->SetBranchAddress("jet_eta_scalar",&jet_eta_scalar);
-   m_treeout->SetBranchAddress("jet_pt_scalar",&jet_pt_scalar);
-   m_treeout->SetBranchAddress("jet_ntrk_scalar",&jet_ntrk_scalar);
-   m_treeout->SetBranchAddress("jet_rtrk_scalar",&jet_rtrk_scalar);
-   m_treeout->SetBranchAddress("jet_width_scalar",&jet_width_scalar);
-   m_treeout->SetBranchAddress("truth_jet_pt_scalar",&truth_jet_pt_scalar);
-   m_treeout->SetBranchAddress("truth_jet_flavor_scalar",&truth_jet_flavor_scalar);
+   std::cout << "Setting branch address for scalar variables" << "\n";
+   m_treeout->Branch("MC_weight_scalar", &MC_weight_scalar, "MC_weight/D"); // of course MC_weight is scalar all the time, however there each occurance of this value is multiplied by jet size
+   m_treeout->Branch("jet_eta_scalar", &jet_eta_scalar, "float");
+   m_treeout->Branch("jet_pt_scalar", &jet_pt_scalar, "float");
+   m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
+   m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float");
+   m_treeout->Branch("jet_width_scalar", &jet_width_scalar, "float");
+   m_treeout->Branch("truth_jet_pt_scalar", &truth_jet_pt_scalar, "float");
+   m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
+// used in the scalar generator process
 }
-// to be used in the scalar generator ---> Opt in Event loop between fill histos and produce preselected scalar dataset  !!!
-
 
 void Selection::BookHistograms()
 {
@@ -120,8 +128,10 @@ void Selection::EventLoop(Long64_t nEntries)
         	Int_t jet_size = truth_jet_pt->size();
         	if (jet_size){
                 	for (int j = 0; j < jet_size; j++){
+				// there will be a veto function
+				// we should figure out the list of given vetos, prolly could be read (and thus easily printed) from an external configural file...
+
 				if (jet_pt->at(j) == -999) continue; // mismatching
-				if (fabs(jet_eta->at(j)) > m_eta_veto) continue;
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
@@ -132,8 +142,17 @@ void Selection::EventLoop(Long64_t nEntries)
 					std::cout << "Wrong setup of inspected variables";
 					exit (EXIT_FAILURE);
 				}
-							
-        			// if (fabs(truth_jet_flavor->at(j)) == 21 || truth_jet_flavor->at(j) < 0) continue;
+				// the advantage of this loop is that same vetos are set to training ML sample as to JES/JER source files, thus we can easily see their diffrence
+				if (training_flag && !m_dataType){
+					MC_weight_scalar = MC_weight;
+                    			jet_pt_scalar = jet_pt->at(j);
+                    			jet_eta_scalar = fabs(jet_eta->at(j));
+                    			jet_ntrk_scalar = jet_ntrk->at(j);
+                    			jet_rtrk_scalar = jet_rtrk->at(j);
+                    			jet_width_scalar = jet_width->at(j);
+                    			truth_jet_pt_scalar = truth_jet_pt->at(j);
+   					m_treeout->Fill();		
+				}
 				if (jet_pt->at(j) <= 0 || truth_jet_pt->at(j) <= 0) continue; // matched based distance
 				if (event_Centrality < 0) continue;					
 				for (unsigned int k = 0; k < varCount; k++){ 
@@ -159,6 +178,13 @@ void Selection::Write(string outName)
         	responseCentrVars.at(c).at(d)->Write();
 	}
    }
+   std::cout << f_out->GetName() << " datafile saved" << "\n";
    f_out->Close();
    m_source->Close();
+   if(training_flag && !m_dataType)
+   {
+	m_outfile->Write();
+	std::cout << m_outfile->GetName() << " datafile saved" << "\n";
+	m_outfile->Close();
+   }
 }
