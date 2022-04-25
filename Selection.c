@@ -8,13 +8,13 @@ Selection::Selection(TString source, TString treeName, TString type)
 	GetTTree();
 }
 
-Selection::Configure(TString variables_data, TString vetos_data)
+void Selection::Configure(TString variables_data, TString vetos_data)
 {
 // Under development
 /*
 zde pres fstream nactu data o variables, vytvorim variables a nakonec
 je push_backnu do InspectedVars
-*/
+
 	ifstream infile;
 	infile.open(variables_data);
 	infile >> data;
@@ -22,7 +22,7 @@ je push_backnu do InspectedVars
 	infile.close();
 // pouze pro debugging, nejprve odladit co načítám za stringy
 // ---> zacnu jako separe kod bokem
-
+*/
 }
 
 void Selection::SetDataType(TString type)
@@ -130,8 +130,13 @@ void Selection::EventLoop(Long64_t nEntries)
                 	for (int j = 0; j < jet_size; j++){
 				// there will be a veto function
 				// we should figure out the list of given vetos, prolly could be read (and thus easily printed) from an external configural file...
-
+				
 				if (jet_pt->at(j) == -999) continue; // mismatching
+				
+				// jet flavor selection - u, d, s, c & g -> 1, 2, 3, 4, 21
+				// placed in the name of datasample
+				if (truth_jet_flavor->at(j) != 21) continue;
+
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
@@ -151,7 +156,8 @@ void Selection::EventLoop(Long64_t nEntries)
                     			jet_rtrk_scalar = jet_rtrk->at(j);
                     			jet_width_scalar = jet_width->at(j);
                     			truth_jet_pt_scalar = truth_jet_pt->at(j);
-   					m_treeout->Fill();		
+   					truth_jet_flavor_scalar = truth_jet_flavor->at(j);	
+				m_treeout->Fill();		
 				}
 				if (jet_pt->at(j) <= 0 || truth_jet_pt->at(j) <= 0) continue; // matched based distance
 				if (event_Centrality < 0) continue;					

@@ -5,30 +5,43 @@ import sys
 sys.path.insert(0, '/home/novotnyp/Diploma_Thesis/lib')
 from TH1_style import *
 
-def GenerateCorrMatrices(inputdir, source, outdir):
+def GenerateCorrMatrices(inputdir, source, outdir): #source is a field of sources in case we want to compare several pp files, in PbPb it works for centralities...
 	print("Generating correlation matrices")
-	f = TFile(inputdir+source)
-	histos, spectra_mu, spectra_sigma = list(), list(), list()
-	for key in f.GetListOfKeys(): #read list of subdirs from TFile
-		cl = gROOT.GetClass(key.GetClassName())
-		if not cl.InheritsFrom("TDirectoryFile"):	continue
-		dirs = key.ReadObj()
-		for key2 in dirs.GetListOfKeys(): #read list of keys from each TDirectory
-			cl = gROOT.GetClass(key2.GetClassName())
-			if not cl.InheritsFrom("TH3"):  continue
-			print("3D matrix processed: "+key2.ReadObj().GetName())
-			if "eta" in key2.ReadObj().GetName() and "PbPb" in source: # key2.ReadObj() returns TH3 classes			
-				mu, sigma = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
-				spectra_mu.append(mu)
-				spectra_sigma.append(sigma)
-			#vectors of TH1s for each eta is returned
-			corr_JES, corr_JER = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
-			histos.append(corr_JES)
-			histos.append(corr_JER)
-	if len(spectra_mu) != 0:		
-		DrawJESnR(spectra_mu, "JES", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
-		DrawJESnR(spectra_sigma, "JER", outdir)
-	WriteIn(histos, outdir, source)
+	histos, spectra_mu_pp, spectra_sigma_pp, spectra_mu_PbPb, spectra_sigma_PbPb = list(), list(), list(), list(), list()
+	tfiles = list() # to prevent closing of TFiles, when opening another one
+	for s in source:
+		print ("Running for source "+s)
+		tfiles.append(TFile(inputdir+s+".root"))
+		for key in tfiles[-1].GetListOfKeys(): #read list of subdirs from TFile
+			cl = gROOT.GetClass(key.GetClassName())
+			if not cl.InheritsFrom("TDirectoryFile"):	continue
+			dirs = key.ReadObj()
+			for key2 in dirs.GetListOfKeys(): #read list of keys from each TDirectory
+				cl = gROOT.GetClass(key2.GetClassName())
+				if not cl.InheritsFrom("TH3"):  continue
+				print("3D matrix processed: "+key2.ReadObj().GetName())
+				if "eta" in key2.ReadObj().GetName() and "PbPb" in s: # key2.ReadObj() returns TH3 classes			
+					mu, sigma = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+					spectra_mu_PbPb.append(mu)
+					spectra_sigma_PbPb.append(sigma)
+				#vectors of TH1s for each eta is returned
+				#for JES/JER in pp case, comparison of several inputs...
+				if "eta" in key2.ReadObj().GetName() and "pp" in s:
+					mu, sigma = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+					spectra_mu_pp.append(mu)
+					spectra_sigma_pp.append(sigma)
+				if len(source) == 1: # correlation matrices generatarion has meaning only for one certain source file...
+					corr_JES, corr_JER = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+					histos.append(corr_JES)
+					histos.append(corr_JER)
+	if len(spectra_mu_pp) != 0:
+		DrawJESnR(spectra_mu_pp, "JES_pp", outdir, source)
+		DrawJESnR(spectra_sigma_pp, "JER_pp", outdir, source)
+	if len(spectra_mu_PbPb) != 0:		
+		DrawJESnR(spectra_mu_PbPb, "JES_PbPb", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
+		DrawJESnR(spectra_sigma_PbPb, "JER_PbPb", outdir)
+	if len(source) == 1: # correlation matrices generatarion has meaning only for one certain source file...
+		WriteIn(histos, outdir, s)
 
 def PrepareJESnR(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over eta
@@ -52,9 +65,9 @@ def PrepareJESnR(h_3F, name, outdir):
 		th1_ress.append(sigma_help)
 	return th1_means, th1_ress
 
-def DrawJESnR(matrix_input, type, outdir):
-	matrix_transp = transpose_list(matrix_input) 
-	for centrs in matrix_transp:
+def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
+	matrix_input = transpose_list(matrix_input)
+	for centrs in matrix_input:
 		c = TCanvas("C1","",800,600)
 		c.SetLogx()
 		legend = TLegend(0.6,0.7,0.85,0.9)
@@ -63,25 +76,31 @@ def DrawJESnR(matrix_input, type, outdir):
 		SetHStyle(centrs[0], 0)
 		outname = centrs[0].GetName()
 
-		if type == "JES":
-			outname = "JES_"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.9,1.05)
+		if "JES in type":
+			outname = "JES"+outname
+			centrs[0].GetYaxis().SetRangeUser(0.9,1.1)
 			centrs[0].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
-		if type == "JER":	
-			outname = "JER_"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.0,0.4)	
-			centrs[0].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")
-	
+		if "JER" in type:	
+			outname = "JER"+outname
+			centrs[0].GetYaxis().SetRangeUser(0.0,0.3)	
+			centrs[0].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")	
+
 		centrs[0].GetXaxis().SetTitle("p_{T} [GeV]")
-		legend.AddEntry(centrs[0], "Centrality = 0-10%", "l")
+		
+		if "pp" in type:
+			legend.AddEntry(centrs[0], list(comparison_labels[0])[0], "l")
+		if "PbPb" in type:
+			legend.AddEntry(centrs[0], "Centrality = 0-10%", "l")
 		centrs[0].Draw("9")
 		
 		for i in range (1, len(centrs)):
 			SetHStyle(centrs[i], i)
-			legend.AddEntry(centrs[i], "Centrality = "+str(i*10)+"-"+str((i+1)*10)+"%", "l")
+			if "pp" in type:
+                        	legend.AddEntry(centrs[i], list(comparison_labels[0])[i], "l")
+			if "PbPb" in type:
+				legend.AddEntry(centrs[i], "Centrality = "+str(i*10)+"-"+str((i+1)*10)+"%", "l")
 			centrs[i].Draw("9 SAME")
-        
-		legend.Draw("")
+			legend.Draw("")
 
 		eta_interval = TLatex()
 		eta_interval.SetTextFont(43)
@@ -89,46 +108,9 @@ def DrawJESnR(matrix_input, type, outdir):
 		eta_interval.SetNDC() #coordinates setup
 		eta_interval.DrawLatex(0.18,0.2,outname) #title
 
-		c.Print(outdir+"JESnJER/"+outname+".png")
-		c.Print(outdir+"JESnJER/"+outname+".pdf")
+		c.Print(outdir+"JESnJER/"+type+outname+".png")
+		c.Print(outdir+"JESnJER/"+type+outname+".pdf")
 		c.Close()
-
-# backup - single JES/JER plotter for debugging porposes only
-
-def deb_helper(matrix_input, type, outdir):
-	matrix_transp = transpose_list(matrix_input)
-	for centrs in matrix_transp:
-		for i in range (1, len(centrs)):
-			c = TCanvas("C1","",800,600)
-			c.SetLogx()
-			SetHStyle(centrs[i], 0)
-			outname = centrs[i].GetName()
-
-			print("Debuggovaci vystup pro histogramy")
-			print(centrs[i].GetName() + " i is equal to " + str(i))
-
-			if type == "JES":
-				outname = "JES_"+outname
-				centrs[i].GetYaxis().SetRangeUser(0.9,1.05)
-				centrs[i].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
-			if type == "JER":
-				outname = "JER_"+outname
-				centrs[i].GetYaxis().SetRangeUser(0.0,0.4)
-				centrs[i].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")
-			centrs[i].GetXaxis().SetTitle("p_{T} [GeV]")
-			centrs[i].Draw("9")
-			
-			eta_interval = TLatex()
-			eta_interval.SetTextFont(43)
-			eta_interval.SetTextSize(28)
-			eta_interval.SetNDC() #coordinates setup
-			eta_interval.DrawLatex(0.18,0.2,outname) #title
-
-			c.Print(outdir+"JESnJER/"+outname+"_"+str(i)+".pdf")
-			c.Close()
-
-# end of debugging function, which will be erased
-
 
 def Make3DProjection(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over var_vals
@@ -191,5 +173,6 @@ def transpose_list(list_2d):
     flat_list = [cell for row in list_2d for cell in row]
     return [flat_list[e::len(list_2d[0])] for e in range(len(list_2d[0]))]
 
+# useful debug function
 def arr_dimen(a):
   return [len(a)]+arr_dimen(a[0]) if(type(a) == list) else []

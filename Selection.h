@@ -38,7 +38,7 @@ public:
 	std::vector<Float_t> * jet_ntrk = 0;
 	std::vector<Float_t> * jet_width = 0;
 	std::vector<Float_t> * truth_jet_pt = 0;
-	std::vector<Int_t> * truth_jet_flavor = 0;
+	std::vector<Float_t> * truth_jet_flavor = 0;
         Float_t jet_eta_scalar;
         Float_t jet_pt_scalar;
         Float_t jet_rtrk_scalar;
@@ -55,13 +55,14 @@ public:
     	loop filling InspectedVars with Variables type with filled constructors values taken from configfile
         // InspectedVars je zde, já to jen v rámci Configure naplním
 	*/
-	Variables pT = Variables("pT", 10, 1000);
+	Variables pT = Variables("pT", 50, 1000);
         Variables response = Variables("response", 99, 0, 2);
 
 	Variables eta = Variables("eta", {0.0,0.3,0.8,1.2,2.1,2.8,3.2,4.5});
         Variables ntrk = Variables("ntrk", 20, 0, 20);
         Variables rtrk = Variables("rtrk", 20, 0, 1);
         Variables width = Variables("width", 20, 0, 1);
+
         std::vector<Variables> InspectedVars = {eta, ntrk, rtrk, width}; // eta is the first, for porpose of JES/JER diagrams
 
 	// end of the declaration --------------------------------

@@ -12,13 +12,13 @@ from Process_histos import *
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
 input_ppdata = "user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
-preselected_PbPbdata = "PbPb_6.root"
-preselected_ppdata = "pp_6.root"
+preselected_PbPbdata = {"PbPb_7"}
+preselected_ppdata = {"pp_u_quark", "pp_d_quark", "pp_s_quark", "pp_gluon"}
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
-run_number = 7
+run_number = 8
 
-doCompile = False # flag variable declaring, which macros should be compiled and which not
+doCompile = True # flag variable declaring, which macros should be compiled and which not
 doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
 calculateStats = True # flag specifying whether to do calculate statistical quantities or not
 doML = False # flag specifying, wherther ML learining and testing should be done
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 		pp_selection.EventLoop()                  
 		PbPb_selection.EventLoop()
 
-		pp_selection.Write(output_folder+"pp_"+str(run_number))
+		pp_selection.Write(output_folder+"pp_gluon")
 		PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
 
 # Statitics
@@ -72,9 +72,10 @@ if __name__ == '__main__':
 	if calculateStats:
 
 # Correlation matrix and JES/JER production
-		GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
+                # JES/JER can be produced for more datasamples, corrmatrices only for	a certain one
+		#GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
 		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
-	
+
 # Machine learning part			
 	f.write("doML flag set to "+str(doML)+"\n")
 	if doML:
