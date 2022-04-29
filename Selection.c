@@ -102,10 +102,10 @@ void Selection::BookHistograms()
 		name.append(std::to_string(iCent));
 		name.append("_type");
 		name.append(std::to_string(m_dataType));
-		h_3F = new TH3F(name.data(), ";jet p_{T} [GeV]", pT.m_bin_count-3, pT.m_bins.data(), response.m_bin_count-3, response.m_bins.data(), var.m_bin_count-3, var.m_bins.data());
+		h_3F = new TH3F(name.data(), ";jet p_{T} [GeV]", pT.m_bin_count-1, pT.m_bins.data(), response.m_bin_count-1, response.m_bins.data(), var.m_bin_count-1, var.m_bins.data());
 		h_3F->GetXaxis()->SetTitle("pT");
-		h_3F->GetYaxis()->SetTitle(var.m_name);
-		h_3F->GetZaxis()->SetTitle("response");
+		h_3F->GetYaxis()->SetTitle("response");
+		h_3F->GetZaxis()->SetTitle(var.m_name);
 		h_3F->Sumw2();
 		helping_vct.push_back(h_3F);
 	}

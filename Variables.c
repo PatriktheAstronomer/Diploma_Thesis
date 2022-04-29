@@ -31,7 +31,7 @@ void Variables::CalculateLogBins(Float_t lower_range, Float_t upper_range)
 { 
 	lower_range = log10(lower_range);
 	int i = 0;
-	while(upper_range > pow(10, lower_range + i * m_firstBinWidth)){
+	while(upper_range > pow(10, lower_range + i* m_firstBinWidth)){
 		m_bins.push_back(pow(10, lower_range + i * m_firstBinWidth));
 		i++;
 	}
@@ -41,7 +41,7 @@ void Variables::CalculateUniBins(Int_t bin_count, Float_t lower_range, Float_t u
 {
 	Float_t step = (upper_range-lower_range)/bin_count;
 	Float_t val = lower_range;
-        for (int k = 0; k <= bin_count+3; k++){
+        for (int k = 0; k <= bin_count-1; k++){
                 m_bins.push_back(val);
 		val+=step;
         }

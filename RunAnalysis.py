@@ -13,7 +13,7 @@ input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
 input_ppdata = "user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
 preselected_PbPbdata = {"PbPb_7"}
-preselected_ppdata = {"pp_u_quark", "pp_d_quark", "pp_s_quark", "pp_gluon"}
+preselected_ppdata = {"pp_u_quark", "pp_d_quark", "pp_s_quark", "pp_c_quark", "pp_b_quark", "pp_gluon"}
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 8
@@ -50,29 +50,31 @@ if __name__ == '__main__':
 		from ROOT import Variables
 		
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
-		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
-		PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
+		#pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
+		#PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
 
 		# veto method will be added in the future ---> It will create vars and vetos from configure file
 	
 		pp_selection.SetBranchAddress()
-		PbPb_selection.SetBranchAddress()
+		#PbPb_selection.SetBranchAddress()
 	
 		pp_selection.BookHistograms()
-		PbPb_selection.BookHistograms()
+		#PbPb_selection.BookHistograms()
 
 		pp_selection.EventLoop()                  
-		PbPb_selection.EventLoop()
+		#PbPb_selection.EventLoop()
 
 		pp_selection.Write(output_folder+"pp_gluon")
-		PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
+		#PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
+
+# ---> rozdelit PbPb a pp generovani
 
 # Statitics
 	f.write("calculateStats flag set to "+str(calculateStats)+"\n")
 	if calculateStats:
 
 # Correlation matrix and JES/JER production
-                # JES/JER can be produced for more datasamples, corrmatrices only for	a certain one
+                # JES/JER can be produced for more datasamples, corrmatrices only for a certain one
 		#GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
 		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
 

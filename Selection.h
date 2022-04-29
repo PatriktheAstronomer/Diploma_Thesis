@@ -55,12 +55,13 @@ public:
     	loop filling InspectedVars with Variables type with filled constructors values taken from configfile
         // InspectedVars je zde, já to jen v rámci Configure naplním
 	*/
-	Variables pT = Variables("pT", 50, 1000);
+	Variables pT = Variables("pT", 50, 1050);
         Variables response = Variables("response", 99, 0, 2);
 
 	Variables eta = Variables("eta", {0.0,0.3,0.8,1.2,2.1,2.8,3.2,4.5});
         Variables ntrk = Variables("ntrk", 20, 0, 20);
         Variables rtrk = Variables("rtrk", 20, 0, 1);
+	// only trks above 4 GeV used, ghost associated trks
         Variables width = Variables("width", 20, 0, 1);
 
         std::vector<Variables> InspectedVars = {eta, ntrk, rtrk, width}; // eta is the first, for porpose of JES/JER diagrams

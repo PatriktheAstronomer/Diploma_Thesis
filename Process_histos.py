@@ -56,11 +56,12 @@ def PrepareJESnR(h_3F, name, outdir):
 		sigma_help = TH1D("SigmaOfEta_"+str(round(z_bins[jz], 1)), "#sigma as function of p_{T} for defined #eta", nxbins, x_bins)
 		for jx in range(nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
-			mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/JES_JER_classic/"+name+"_pT_"+str(round(x_bins[jx],1))+"_val_"+str(round(z_bins[jz],1))+".png", x_bins[jx])
-			mean_help.SetBinContent(jx,mu)
-			mean_help.SetBinError(jx,emu)
-			sigma_help.SetBinContent(jx,sigma) # normalised
-			sigma_help.SetBinError(jx,esigma) # normalised ---> However, the final output should be normalised by itself.
+			if(ySlice.GetEntries() > 25):
+				mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/JES_JER_classic/"+name+"_pT_"+str(round(x_bins[jx],1))+"_val_"+str(round(z_bins[jz],1))+".png", x_bins[jx])
+				mean_help.SetBinContent(jx,mu)
+				mean_help.SetBinError(jx,emu)
+				sigma_help.SetBinContent(jx,sigma) # normalised
+				sigma_help.SetBinError(jx,esigma) # normalised ---> However, the final output should be normalised by itself.
 		th1_means.append(mean_help)
 		th1_ress.append(sigma_help)
 	return th1_means, th1_ress
