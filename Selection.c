@@ -70,7 +70,7 @@ void Selection::SetBranchAddress()
    m_tree->SetBranchAddress("jet_eta",&jet_eta);
    m_tree->SetBranchAddress("jet_pt",&jet_pt);
    m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
-   m_tree->SetBranchAddress("jet_rtrk",&jet_rtrk);
+   //m_tree->SetBranchAddress("jet_rtrk",&jet_rtrk);
    m_tree->SetBranchAddress("jet_width",&jet_width);
    m_tree->SetBranchAddress("truth_jet_pt",&truth_jet_pt);
    m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
@@ -84,7 +84,7 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("jet_eta_scalar", &jet_eta_scalar, "float");
    m_treeout->Branch("jet_pt_scalar", &jet_pt_scalar, "float");
    m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
-   m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float");
+   //m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float");
    m_treeout->Branch("jet_width_scalar", &jet_width_scalar, "float");
    m_treeout->Branch("truth_jet_pt_scalar", &truth_jet_pt_scalar, "float");
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
@@ -133,14 +133,14 @@ void Selection::EventLoop(Long64_t nEntries)
 				
 				if (jet_pt->at(j) == -999) continue; // mismatching
 				
-				// jet flavor selection - u, d, s, c & g -> 1, 2, 3, 4, 21
+				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
 				if (truth_jet_flavor->at(j) != 21) continue;
 
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
-				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_rtrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
+				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
 				unsigned int varCount = inspectedVars.size();
 
 				if (InspectedVars.size() != varCount){
@@ -153,7 +153,7 @@ void Selection::EventLoop(Long64_t nEntries)
                     			jet_pt_scalar = jet_pt->at(j);
                     			jet_eta_scalar = fabs(jet_eta->at(j));
                     			jet_ntrk_scalar = jet_ntrk->at(j);
-                    			jet_rtrk_scalar = jet_rtrk->at(j);
+                    			//jet_rtrk_scalar = jet_rtrk->at(j);
                     			jet_width_scalar = jet_width->at(j);
                     			truth_jet_pt_scalar = truth_jet_pt->at(j);
    					truth_jet_flavor_scalar = truth_jet_flavor->at(j);	
@@ -182,6 +182,7 @@ void Selection::Write(string outName)
 	for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
 		f_out->cd(name.data());
         	responseCentrVars.at(c).at(d)->Write();
+		delete responseCentrVars.at(c).at(d);
 	}
    }
    std::cout << f_out->GetName() << " datafile saved" << "\n";

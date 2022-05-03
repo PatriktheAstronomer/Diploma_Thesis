@@ -9,6 +9,7 @@ def GenerateCorrMatrices(inputdir, source, outdir): #source is a field of source
 	print("Generating correlation matrices")
 	histos, spectra_mu_pp, spectra_sigma_pp, spectra_mu_PbPb, spectra_sigma_PbPb = list(), list(), list(), list(), list()
 	tfiles = list() # to prevent closing of TFiles, when opening another one
+	source = sorted(source)
 	for s in source:
 		print ("Running for source "+s)
 		tfiles.append(TFile(inputdir+s+".root"))
@@ -71,7 +72,9 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 	for centrs in matrix_input:
 		c = TCanvas("C1","",800,600)
 		c.SetLogx()
-		legend = TLegend(0.6,0.7,0.85,0.9)
+		c.SetLeftMargin(0.2)
+		c.SetBottomMargin(0.2)
+		legend = TLegend(0.4,0.7,0.6,0.9)
 		legend.SetFillColor(0)
 		legend.SetBorderSize(1)
 		SetHStyle(centrs[0], 0)
@@ -79,17 +82,18 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 
 		if "JES in type":
 			outname = "JES"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.9,1.1)
+			centrs[0].GetYaxis().SetRangeUser(0.97,1.07)
 			centrs[0].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
 		if "JER" in type:	
 			outname = "JER"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.0,0.3)	
+			centrs[0].GetYaxis().SetRangeUser(0.0,0.2)	
 			centrs[0].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")	
 
 		centrs[0].GetXaxis().SetTitle("p_{T} [GeV]")
 		
 		if "pp" in type:
-			legend.AddEntry(centrs[0], list(comparison_labels[0])[0], "l")
+			labels = list(comparison_labels[0]) 
+			legend.AddEntry(centrs[0], labels[0], "l")
 		if "PbPb" in type:
 			legend.AddEntry(centrs[0], "Centrality = 0-10%", "l")
 		centrs[0].Draw("9")
@@ -97,7 +101,7 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 		for i in range (1, len(centrs)):
 			SetHStyle(centrs[i], i)
 			if "pp" in type:
-                        	legend.AddEntry(centrs[i], list(comparison_labels[0])[i], "l")
+                        	legend.AddEntry(centrs[i], labels[i], "l")
 			if "PbPb" in type:
 				legend.AddEntry(centrs[i], "Centrality = "+str(i*10)+"-"+str((i+1)*10)+"%", "l")
 			centrs[i].Draw("9 SAME")

@@ -34,7 +34,7 @@ public:
 	double MC_weight_scalar;
 	std::vector<Float_t> * jet_eta = 0;
 	std::vector<Float_t> * jet_pt = 0;
-	std::vector<Float_t> * jet_rtrk = 0;
+	//std::vector<Float_t> * jet_rtrk = 0;
 	std::vector<Float_t> * jet_ntrk = 0;
 	std::vector<Float_t> * jet_width = 0;
 	std::vector<Float_t> * truth_jet_pt = 0;
@@ -60,11 +60,11 @@ public:
 
 	Variables eta = Variables("eta", {0.0,0.3,0.8,1.2,2.1,2.8,3.2,4.5});
         Variables ntrk = Variables("ntrk", 20, 0, 20);
-        Variables rtrk = Variables("rtrk", 20, 0, 1);
+        //Variables rtrk = Variables("rtrk", 20, 0, 1);
 	// only trks above 4 GeV used, ghost associated trks
         Variables width = Variables("width", 20, 0, 1);
 
-        std::vector<Variables> InspectedVars = {eta, ntrk, rtrk, width}; // eta is the first, for porpose of JES/JER diagrams
+        std::vector<Variables> InspectedVars = {eta, ntrk, /*rtrk, */width}; // eta is the first, for porpose of JES/JER diagrams
 
 	// end of the declaration --------------------------------
 
