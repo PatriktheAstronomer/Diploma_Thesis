@@ -53,22 +53,22 @@ if __name__ == '__main__':
 		from ROOT import Variables
 		
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
-		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
-		PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
+		#pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
+		#PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
 
 		# veto method will be added in the future ---> It will create vars and vetos from configure file
 	
 		pp_selection.SetBranchAddress()
-		PbPb_selection.SetBranchAddress()
+		#PbPb_selection.SetBranchAddress()
 	
 		pp_selection.BookHistograms()
-		PbPb_selection.BookHistograms()
+		#PbPb_selection.BookHistograms()
 
 		pp_selection.EventLoop(100000)                  
-		PbPb_selection.EventLoop(100000)
+		#PbPb_selection.EventLoop(100000)
 
-		pp_selection.Write(output_folder+"dummy_for_scalar")
-		PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
+		pp_selection.Write(output_folder+"pp_"+"testNewVars")
+		#PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
 
 # ---> rozdelit PbPb a pp generovani
 

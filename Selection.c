@@ -70,8 +70,10 @@ void Selection::SetBranchAddress()
    m_tree->SetBranchAddress("jet_eta",&jet_eta);
    m_tree->SetBranchAddress("jet_pt",&jet_pt);
    m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
-   //m_tree->SetBranchAddress("jet_rtrk",&jet_rtrk);
+  //m_tree->SetBranchAddress("jet_rtrk",&jet_rtrk); ---> change to sumpt
    m_tree->SetBranchAddress("jet_width",&jet_width);
+   m_tree->SetBranchAddress("jet_N90", &jet_N90);
+   m_tree->SetBranchAddress("jet_EnergyPerSampling", &jet_EnergyPerSampling);
    m_tree->SetBranchAddress("truth_jet_pt",&truth_jet_pt);
    m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
    m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
@@ -86,6 +88,7 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
    //m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float");
    m_treeout->Branch("jet_width_scalar", &jet_width_scalar, "float");
+   m_treeout->Branch("jet_N90_scalar", &jet_N90_scalar, "float");
    m_treeout->Branch("truth_jet_pt_scalar", &truth_jet_pt_scalar, "float");
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
 // used in the scalar generator process
@@ -93,6 +96,8 @@ void Selection::CreateBranchScalar()
 
 void Selection::BookHistograms()
 {
+    InspectedVars.insert(InspectedVars.end(), EnergySamplingVars.begin(), EnergySamplingVars.end());
+
     for(int iCent = 0; iCent < m_centralityBinsN; iCent++){
 	std::vector<TH3F*> helping_vct;
    	for (auto &var : InspectedVars){
@@ -135,16 +140,23 @@ void Selection::EventLoop(Long64_t nEntries)
 				
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				if (truth_jet_flavor->at(j) != 21) continue;
+				//if (truth_jet_flavor->at(j) != 21) continue;
 
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 
-				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_width->at(j)}; // tato cast se setupuju rukou! musi sedet poradi!!!			
+				// Pak pridat N90, ted je spatne plnena, stejne tak energyPerSampling				
+				
+				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_width->at(j)}; //rucne setupovane
+
+				std::vector<Float_t> energySamplingVars;
+			
+				for (int k = 0; k < EnergySamplingVars.size(); k++) energySamplingVars.push_back(jet_EnergyPerSampling->at(j).at(k));
+				inspectedVars.insert(inspectedVars.end(), energySamplingVars.begin(), energySamplingVars.end());
 				unsigned int varCount = inspectedVars.size();
 
 				if (InspectedVars.size() != varCount){
-					std::cout << "Wrong setup of inspected variables";
+					std::cout << "Wrong setup of inspected variables - varCount: " << varCount << " but InspectedVars.size()" << InspectedVars.size();
 					exit (EXIT_FAILURE);
 				}
 				// the advantage of this loop is that same vetos are set to training ML sample as to JES/JER source files, thus we can easily see their diffrence
@@ -155,14 +167,18 @@ void Selection::EventLoop(Long64_t nEntries)
                     			jet_ntrk_scalar = jet_ntrk->at(j);
                     			//jet_rtrk_scalar = jet_rtrk->at(j);
                     			jet_width_scalar = jet_width->at(j);
+					jet_N90_scalar = jet_N90->at(j);
                     			truth_jet_pt_scalar = truth_jet_pt->at(j);
    					truth_jet_flavor_scalar = truth_jet_flavor->at(j);	
 				m_treeout->Fill();		
 				}
 				if (jet_pt->at(j) <= 0 || truth_jet_pt->at(j) <= 0) continue; // matched based distance
 				if (event_Centrality < 0) continue;					
-				for (unsigned int k = 0; k < varCount; k++){ 
-					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[j], MC_weight);
+				for (unsigned int k = 0; k < varCount; k++){
+					//std::cout << "var number k: " << k << " inspected number j: " << j << "\n"; 
+					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[k], MC_weight);
+					// Note -> there used to be inspectedVars[j] instead of [k]
+					//std::cout << "Written val: " << inspectedVars[k] << "\n";
 					// pp is written into 0th component of the responseCentrVars, PbPb into 0-7th as pp has the value 0
 				}
 			}
