@@ -32,16 +32,19 @@ def GenerateCorrMatrices(inputdir, source, outdir): #source is a field of source
 					spectra_mu_pp.append(mu)
 					spectra_sigma_pp.append(sigma)
 				if len(source) == 1: # correlation matrices generatarion has meaning only for one certain source file...
-					corr_JES, corr_JER = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+					#returned in order to same all the histos in a root file
+					corr_JES, corr_JER, corr_count, corr_count_pT_integrated = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
 					histos.append(corr_JES)
 					histos.append(corr_JER)
+					histos.append(corr_count)
+					histos.append(corr_count_pT_integrated)
 	if len(spectra_mu_pp) != 0:
 		DrawJESnR(spectra_mu_pp, "JES_pp", outdir, source)
 		DrawJESnR(spectra_sigma_pp, "JER_pp", outdir, source)
 	if len(spectra_mu_PbPb) != 0:		
 		DrawJESnR(spectra_mu_PbPb, "JES_PbPb", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
 		DrawJESnR(spectra_sigma_PbPb, "JER_PbPb", outdir)
-	if len(source) == 1: # correlation matrices generatarion has meaning only for one certain source file...
+	if len(source) == 1: # spare time, when we want to calculate ONLY JES/JER
 		WriteIn(histos, outdir, s)
 
 def PrepareJESnR(h_3F, name, outdir):
@@ -49,7 +52,7 @@ def PrepareJESnR(h_3F, name, outdir):
 	nxbins = h_3F.GetNbinsX() #projection over pT
 	z_bins = np.asarray(h_3F.GetZaxis().GetXbins())
 	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
-	th1_means, th1_ress = [], []
+	th1_means, th1_ress, fits = [], [], []
 	for jz in range(nzbins):
 		h_3F.GetZaxis().SetRange(jz,jz)
 		slice = h_3F.Project3D("yx")
@@ -65,7 +68,7 @@ def PrepareJESnR(h_3F, name, outdir):
 				sigma_help.SetBinError(jx,esigma) # normalised ---> However, the final output should be normalised by itself.
 		th1_means.append(mean_help)
 		th1_ress.append(sigma_help)
-	return th1_means, th1_ress
+	return th1_means, th1_ress, fits
 
 def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 	matrix_input = transpose_list(matrix_input)
@@ -82,12 +85,12 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 
 		if "JES in type":
 			outname = "JES"+outname
-			centrs[0].GetYaxis().SetRangeUser(0.97,1.07)
-			centrs[0].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})/(<p_{T_{reco}}/p_{T}>)")
+			centrs[0].GetYaxis().SetRangeUser(0.93,1.07)
+			centrs[0].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")
 		if "JER" in type:	
 			outname = "JER"+outname
 			centrs[0].GetYaxis().SetRangeUser(0.0,0.2)	
-			centrs[0].GetYaxis().SetTitle("<p_{T_{reco}}/p_{T}>")	
+			centrs[0].GetYaxis().SetTitle("#sigma(p_{T_{reco}}/p_{T})")
 
 		centrs[0].GetXaxis().SetTitle("p_{T} [GeV]")
 		
@@ -114,7 +117,6 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels):
 		eta_interval.DrawLatex(0.18,0.2,outname) #title
 
 		c.Print(outdir+"JESnJER/"+type+outname+".png")
-		c.Print(outdir+"JESnJER/"+type+outname+".pdf")
 		c.Close()
 
 def Make3DProjection(h_3F, name, outdir):
@@ -126,27 +128,51 @@ def Make3DProjection(h_3F, name, outdir):
 	corr_JES.SetStats(0);	
 	corr_JER = TH2D("JER", "JER", nxbins, x_bins, nzbins, z_bins)
 	corr_JER.SetStats(0)
+	corr_count = TH2D("counts", "counts", nxbins, x_bins, nzbins, z_bins)
+	corr_count.SetStats(0)
+	corr_count_pT_integrated = TH1D("counts integrated over pT", "counts integrated over pT", nzbins, z_bins)
+	corr_count_pT_integrated.SetStats(0)
+
+	total_jet_count = h_3F.GetEntries()
 	for jz in range(nzbins):
 		h_3F.GetZaxis().SetRange(jz,jz)		
 		slice = h_3F.Project3D("yx")
+		if (slice.GetEntries() == 0):
+			continue
+		corr_count_pT_integrated.Fill(z_bins[jz], slice.GetEntries()/total_jet_count)
 		for jx in range(nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
+			corr_count.Fill(x_bins[jx], z_bins[jz], ySlice.GetEntries()/total_jet_count)		
 			if(ySlice.GetEntries() > 25):
 				mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/"+name+"_pT_"+str(round(x_bins[jx],1))+"_val_"+str(round(z_bins[jz],1))+".png", x_bins[jx])
 				if(emu <= 0.5 and esigma <= 0.5):
 					corr_JES.Fill(x_bins[jx], z_bins[jz], mu)
 					corr_JER.Fill(x_bins[jx], z_bins[jz], sigma)
+	
 	corr_JER.GetZaxis().SetRangeUser(0.0,0.5)
 	corr_JES.GetZaxis().SetRangeUser(0.8,1.2)
+
 	corr_JER.SetName("JER_"+name)
 	corr_JES.SetName("JES_"+name)
+	corr_count.SetName("jet_count_"+name)
+	corr_count_pT_integrated.SetName("jet_countpT_integrated"+name)
+
 	corr_JER.GetXaxis().SetTitle("pT [GeV]")
 	corr_JER.GetYaxis().SetTitle(name)
 	corr_JES.GetXaxis().SetTitle("pT [GeV]")
 	corr_JES.GetYaxis().SetTitle(name)
-	Draw(corr_JER, outdir+"matrices/JER_"+name+".png")
-	Draw(corr_JES, outdir+"matrices/JES_"+name+".png")		
-	return corr_JES, corr_JER
+	corr_count.GetXaxis().SetTitle("pT [GeV]")
+	corr_count.GetYaxis().SetTitle(name)
+	corr_count_pT_integrated.GetXaxis().SetTitle(name)
+
+	#Draw(corr_JER, outdir+"matrices/JER_"+name+".png")
+	#Draw(corr_JES, outdir+"matrices/JES_"+name+".png")		
+	#Draw(corr_count, outdir+"matrices/count_"+name+".png")
+	#Draw(corr_count_pT_integrated, outdir+"matrices/count_int_"+name+".png")
+	# Since I want better processing and comparisons, I am doing another postprocessing stuff later on...
+
+	return corr_JES, corr_JER, corr_count, corr_count_pT_integrated
+
 
 def FitResponse(ySlice, outname, pTt):
 	mean = ySlice.GetMean()
@@ -169,7 +195,7 @@ def Draw(h_2F, outname):
 	c.Print(outname)
 
 def WriteIn(histos, outdir, source):
-	f_out = TFile(outdir+"matrices/Correlations_"+source, "RECREATE")
+	f_out = TFile(outdir+"matrices/Correlations_"+source+".root", "RECREATE")
 	for matrix in histos:
 		matrix.Write()
 	f_out.Close()

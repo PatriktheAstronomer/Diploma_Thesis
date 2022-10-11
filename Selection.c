@@ -70,7 +70,7 @@ void Selection::SetBranchAddress()
    m_tree->SetBranchAddress("jet_eta",&jet_eta);
    m_tree->SetBranchAddress("jet_pt",&jet_pt);
    m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
-  //m_tree->SetBranchAddress("jet_rtrk",&jet_rtrk); ---> change to sumpt
+   //m_tree->SetBranchAddress("jet_SumPtTrk",&jet_SumPtTrk);
    m_tree->SetBranchAddress("jet_width",&jet_width);
    m_tree->SetBranchAddress("jet_N90", &jet_N90);
    m_tree->SetBranchAddress("jet_EnergyPerSampling", &jet_EnergyPerSampling);
@@ -86,12 +86,15 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("jet_eta_scalar", &jet_eta_scalar, "float");
    m_treeout->Branch("jet_pt_scalar", &jet_pt_scalar, "float");
    m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
-   //m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float");
+   //m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float"); 
    m_treeout->Branch("jet_width_scalar", &jet_width_scalar, "float");
    m_treeout->Branch("jet_N90_scalar", &jet_N90_scalar, "float");
    m_treeout->Branch("truth_jet_pt_scalar", &truth_jet_pt_scalar, "float");
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
 // used in the scalar generator process
+
+// create here calo variables later, when needed
+
 }
 
 void Selection::BookHistograms()
@@ -140,14 +143,12 @@ void Selection::EventLoop(Long64_t nEntries)
 				
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				//if (truth_jet_flavor->at(j) != 21) continue;
+				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 6) continue;
 
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
-
-				// Pak pridat N90, ted je spatne plnena, stejne tak energyPerSampling				
-				
-				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_width->at(j)}; //rucne setupovane
+		
+				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_N90->at(j), jet_width->at(j)}; //rucne setupovane
 
 				std::vector<Float_t> energySamplingVars;
 			

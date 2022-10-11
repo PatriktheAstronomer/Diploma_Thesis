@@ -5,25 +5,28 @@ import math
 from math import *
 import uproot
 import numpy as np
-#import pandas as pd
-from matplotlib import pyplot as plt
-from Process_histos import *
+import matplotlib.pyplot as plt
+from Process_data_simplified import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
-input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
-#"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
-#"user.mrybar.pp_MC_H7_ForPatrik_r002_deriv_ANALYSIS.root"
-input_ppdata="user.mrybar.pp_MC_P8_ForPatrik_r002_deriv_ANALYSIS.root"
+input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
+input_ppdata="user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
 
-preselected_PbPbdata = {"PbPb_7"}
-preselected_ppdata = {"pp_H7_u_quark", "pp_H7_d_quark", "pp_H7_s_quark", "pp_H7_c_quark", "pp_H7_b_quark", "pp_H7_gluon"}
+#"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
+#"user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
+#"user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
+
+preselected_PbPbdata = {"PbPb_preselected"}
+preselected_ppdata = {"pp_gluon_P8", "pp_quark_inclusive_P8", "pp_preselected_P8"}
+# implement this feature as a set of output arguments, also idealy placed into config file ---> python reads congif and give the flags to c++ constructors
+
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 10
 
 doCompile = True # flag variable declaring, which macros should be compiled and which not
-doSelection = True # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
-calculateStats = False # flag specifying whether to do calculate statistical quantities or not
+doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
+calculateStats = True # flag specifying whether to do calculate statistical quantities or not
 doML = False # flag specifying, wherther ML learining and testing should be done
 
 if __name__ == '__main__':
@@ -52,35 +55,37 @@ if __name__ == '__main__':
 		from ROOT import Selection
 		from ROOT import Variables
 		
-		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
+		#pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		#pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
-		#PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
+		PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
 
 		# veto method will be added in the future ---> It will create vars and vetos from configure file
 	
-		pp_selection.SetBranchAddress()
-		#PbPb_selection.SetBranchAddress()
+		#pp_selection.SetBranchAddress()
+		PbPb_selection.SetBranchAddress()
 	
-		pp_selection.BookHistograms()
-		#PbPb_selection.BookHistograms()
+		#pp_selection.BookHistograms()
+		PbPb_selection.BookHistograms()
 
-		pp_selection.EventLoop(100000)                  
-		#PbPb_selection.EventLoop(100000)
+		#pp_selection.EventLoop()                  
+		PbPb_selection.EventLoop()
 
-		pp_selection.Write(output_folder+"pp_"+"testNewVars")
-		#PbPb_selection.Write(output_folder+"PbPb_"+str(run_number))
+		#pp_selection.Write(output_folder+"pp_quark_inclusive_P8")
+		PbPb_selection.Write(output_folder+"PbPb_preselection")
 
-# ---> rozdelit PbPb a pp generovani
 
 # Statitics
 	f.write("calculateStats flag set to "+str(calculateStats)+"\n")
 	if calculateStats:
 
 # Correlation matrix and JES/JER production
-                # JES/JER can be produced for more datasamples, corrmatrices only for a certain one
+		#GenerateJERS(output_folder, preselected_ppdata, output_folder)
+		# JES/JER can be produced for more datasamples, corrmatrices only for a certain one
 		#GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
 		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
 
+
+### TOHLE NIZ NAS NEZAJIMA ZATIM:
 # Machine learning part			
 	f.write("doML flag set to "+str(doML)+"\n")
 	if doML:
