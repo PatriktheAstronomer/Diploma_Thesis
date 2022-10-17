@@ -55,33 +55,46 @@ def GenerateCorrMatrices(inputdir, source, outdir):
 	print("Generating correlation matrices")
 	corr_JES_matrix, corr_JER_matrix, corr_count_matrix, corr_count_pT_integrated_matrix = list(), list(), list(), list()
 	tfiles = list() # to prevent closing of TFiles, when opening another one
+	var_names = list()
 	source = sorted(source)
 	for s in source:
+		corr_JES_helper, corr_JER_helper, corr_count_helper, corr_count_pT_integrated_helper = list(), list(), list(), list()
 		print ("Running for source "+s)
 		tfiles.append(TFile(inputdir+s+".root"))
 		for key in tfiles[-1].GetListOfKeys(): #read list of subdirs from TFile
 			cl = gROOT.GetClass(key.GetClassName())
 			if not cl.InheritsFrom("TDirectoryFile"):	continue
 			dirs = key.ReadObj()
+			var_keys_helper = list()
 			for key2 in dirs.GetListOfKeys(): #read list of keys from each TDirectory
 				cl = gROOT.GetClass(key2.GetClassName())
 				if not cl.InheritsFrom("TH3"):  continue
 		
-				print("3D matrix processed: "+key2.ReadObj().GetName()) # APPENDOVAT NAZVY A POSLAT DO DRAWMATRICES A DRAWPROFILES! VYPISU NA OSY
-				if len(source) != 1: # ZATIM ZKOUSKA JEN PRO pp, pak bude i pro jednotlive CENTRALITY
+				print("3D matrix processed: "+key2.ReadObj().GetName())
+				var_keys_helper.append(key2.ReadObj().GetName())
+
+				if len(source) != 1: # ZATIM ZKOUSKA JEN PRO pp, pak bude i pro jednotlive CENTRALITY ???
 				
-					corr_JES, corr_JER, corr_count, corr_count_pT_integrated = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
-					corr_JES_matrix.append(corr_JES)
-					corr_JER_matrix.append(corr_JER)
-					corr_count_matrix.append(corr_count)
-					corr_count_pT_integrated_matrix.append(corr_count_pT_integrated)
+					x_bins, z_bins, corr_JES, corr_JER, corr_count, corr_count_pT_integrated = Make3DProjection(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+					corr_JES_helper.append([x_bins, z_bins, corr_JES])
+					corr_JER_helper.append([x_bins, z_bins, corr_JER])
+					corr_count_helper.append([x_bins, z_bins, corr_count])
+					corr_count_pT_integrated_helper.append(corr_count_pT_integrated)
+
+		var_names = var_keys_helper #its the same for all sources
+
+		corr_JES_matrix.append(corr_JES_helper)
+		corr_JER_matrix.append(corr_JER_helper)
+		corr_count_matrix.append(corr_count_helper)
+		corr_count_pT_integrated_matrix.append(corr_count_pT_integrated_helper)
+
 	
 	# Aplikujeme vstup pro PbPb casem
 	if len(corr_JES_matrix):
-		#DrawMatrices(corr_JES_matrix, "pp")
-		#DrawMatrices(corr_JER_matrix, "pp")
-		DrawMatrices(corr_count_matrix, "pp")
-		DrawProfiles(corr_count_pT_integrated_matrix, "pp")
+		DrawMatrices(corr_JES_matrix, outdir, var_names, source, "pp")
+		DrawMatrices(corr_JER_matrix, outdir, var_names, source, "pp")
+		DrawMatrices(corr_count_matrix, outdir, var_names, source, "pp")
+		DrawProfiles(corr_count_pT_integrated_matrix, outdir, var_names, source, "pp")
 
 def PrepareJESnR(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over eta
@@ -162,19 +175,37 @@ def DrawResponse(matrix_input, outdir, comparison_labels): #compares flavours, n
 			plt.savefig(outdir+"/response/eta_"+str(eta_bins[index])+"_pT_"+str(round(pT_data[j][k]))+".png")
 			plt.close()
 
-def DrawProfiles(matrix_input, type): #REMOVE pp settings; under development
-	print("Profil dimensions") # sources se vykresli pres sebe... tedy to bude nejnizsi cyklus loopu
-	print(len(matrix_input)) #84 = 28*3 ---> 3 sources, 28 promennych k inspekci
-	print(len(matrix_input[0])) #4 ---> 4 eta
-	print(len(matrix_input[0][0])) #2 ---> x, y
+def DrawProfiles(matrix_input, outdir, names, sources, type): #REMOVE pp settings; under development
+	print("Profil dimensions") # sources se vykresli pres sebe
+	for k in range(len(matrix_input[0])):	#vars loop
+			name = names[k]
+			fig = plt.figure()
+			plt.title("Profile for "+ name)
+			plt.ylabel("relative count")
+			plt.xlabel(name)
+			for i in range(len(matrix_input)): #source vars	
+				plt.plot(matrix_input[i][k][0], matrix_input[i][k][1], linestyle="None", marker='o') #to be improved - various markers, f. e. from enumerate
+			plt.legend(sources)
+			plt.savefig(outdir+"/profiles/"+name+".png")
+			plt.close()
 
-def DrawMatrices(matrix_input, type): #REMOVE pp settings; under development
-	print("Matrices dimensions") # sources se vykresli vedle sebe... tedy to bude nejnizsi cyklus loopu
-	print(len(matrix_input)) #84 = 28*3 ---> 3 sources, 28 promennych k inspekci
-	print(len(matrix_input[0])) #4 ---> 4 eta
-	print(len(matrix_input[0][0])) #12 ---> 12 pT
-	print(len(matrix_input[0][0][0])) #3 ---> x, y, z
+def DrawMatrices(matrix_input, outdir, names, sources, type): #REMOVE pp settings; under development
+# posunout barmeters
+# omezit scale barmeteru -> vmin=None, vmax=None
+# JES, JER, count musi mit jina jmena, jinak je to bude ukladat pod sebe...
 
+	print("Matrices dimensions") # sources se vykresli vedle sebe
+	for k in range(len(matrix_input[0])):   #vars loop
+			name = names[k]
+			fig, ax = plt.subplots(nrows=len(matrix_input), ncols=1)
+			for i in range(len(matrix_input)): #source vars
+				plc = ax[i].pcolormesh(matrix_input[i][k][0], matrix_input[i][k][1], matrix_input[i][k][2]) #to be improved - various markers, f. e. from enumerate
+				ax[i].set_ylabel(name)
+				ax[i].set_xlabel("pT")
+				ax[i].set_title("Corr matrix for "+sources[i])
+				fig.colorbar(plc)
+			plt.savefig(outdir+"/matrices/eta_"+name+".png")
+			plt.close()
 
 def Make3DProjection(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over var_vals
@@ -184,29 +215,27 @@ def Make3DProjection(h_3F, name, outdir):
 	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
 	total_jet_count = h_3F.GetEntries()
 	corr_JES, corr_JER, corr_count, corr_count_pT_integrated = [], [], [], []
-	# ---> rewrite to 2D, resp 3D arrays
 
 	for jz in range(nzbins):
-		h_3F.GetZaxis().SetRange(jz,jz)		
-		h_3F.GetZaxis().SetRange(jz,jz)		
+		h_3F.GetZaxis().SetRange(jz,jz)				
 		slice = h_3F.Project3D("yx")
-		corr_JES_eta, corr_JER_eta, corr_count_eta = [], [], []
+		corr_JES_val, corr_JER_val, corr_count_val = [], [], []
 		corr_count_pT_integrated.append([z_coordinate[jz], slice.GetEntries()/total_jet_count])
 		for jx in range(nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
-			corr_count_eta.append([x_bins[jx], z_bins[jz], ySlice.GetEntries()/total_jet_count])
+			corr_count_val.append(ySlice.GetEntries()/total_jet_count)
 			mu, sigma, emu, esigma = nan, nan, nan, nan		
 			if(ySlice.GetEntries() > 25):
 				mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/"+name+"_pT_"+str(round(x_bins[jx],1))+"_val_"+str(round(z_bins[jz],1))+".png", x_bins[jx])
 				if(emu > 0.5 or esigma > 0.5):
 					mu, sigma = nan, nan	
-			corr_JES_eta.append([x_bins[jx], z_bins[jz], mu])
-			corr_JER_eta.append([x_bins[jx], z_bins[jz], sigma/mu])
-		corr_JES.append(corr_JES_eta)
-		corr_JER.append(corr_JER_eta)
-		corr_count.append(corr_count_eta)
+			corr_JES_val.append(mu)
+			corr_JER_val.append(sigma/mu)
+		corr_JES.append(corr_JES_val)
+		corr_JER.append(corr_JER_val)
+		corr_count.append(corr_count_val)
 
-	return corr_JES, corr_JER, corr_count, corr_count_pT_integrated
+	return x_bins, z_bins, corr_JES, corr_JER, corr_count, transpose_list(corr_count_pT_integrated)
 
 def FitResponse(ySlice, outname, pTt):
 	mean = ySlice.GetMean()
