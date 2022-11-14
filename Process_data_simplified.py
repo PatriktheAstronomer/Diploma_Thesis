@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '/home/novotnyp/Diploma_Thesis/lib')
 from TH1_style import *
 
-eta_bins = [0.0, 0.8, 2.1, 3.2, 4.5] # HARD-TYPED NOT NECESSARLY, BUT NOT CHANGED OFTEN
+eta_bins = [0.0, 0.3, 0.8, 1.2, 1.8, 2.1, 3.2, 4.5] # HARD-TYPED NOT NECESSARLY, BUT NOT CHANGED OFTEN
 
 def GenerateJERS(inputdir, source, outdir):
 	print("Generation JES/JER")
@@ -88,13 +88,17 @@ def GenerateCorrMatrices(inputdir, source, outdir):
 		corr_count_matrix.append(corr_count_helper)
 		corr_count_pT_integrated_matrix.append(corr_count_pT_integrated_helper)
 
-	
-	# Aplikujeme vstup pro PbPb casem
+	# Aplikujeme vstup pro PbPb casem ---> budu to tam chctit dostat stejne jako ted... ruzne centrality naplnim do source...
+        # bude-li jen jeden source na vstupu, tak ulozim veci, jak jdou po centralitach a jen upravim source list, aby mi je to porovnalo
+        # ono nakonec v PbPb nechci delat studie, tam budou data obecna... jen studie v centralite, naopak v pp ty studie delat chci... resp asi je chci i v PbPb, ale jen jednou
+        # to uz si pripadne porovnam oddelene
+
 	if len(corr_JES_matrix):
-		DrawMatrices(corr_JES_matrix, outdir, var_names, source, "pp")
-		DrawMatrices(corr_JER_matrix, outdir, var_names, source, "pp")
-		DrawMatrices(corr_count_matrix, outdir, var_names, source, "pp")
-		DrawProfiles(corr_count_pT_integrated_matrix, outdir, var_names, source, "pp")
+		DrawMatrices(corr_JES_matrix, outdir, var_names, source, "JES")
+		DrawMatrices(corr_JER_matrix, outdir, var_names, source, "JER")
+		DrawMatrices(corr_count_matrix, outdir, var_names, source, "count")
+		DrawCounts(corr_count_pT_integrated_matrix, outdir, var_names, source)
+                DrawProfiles(corr_JES_matrix, corr_JER_matrix, outdir, var_names, source)
 
 def PrepareJESnR(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over eta
@@ -104,13 +108,13 @@ def PrepareJESnR(h_3F, name, outdir):
 	y_bins = np.asarray(h_3F.GetYaxis().GetXbins())
 	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
 	means, ress, fits = [], [], []
-	x_coordinate = [np.mean([x_bins[i], x_bins[i+1]]) for i in range(nxbins)]
+	x_coordinate = [np.mean([x_bins[i], x_bins[i+1]]) for i in range(0, nxbins)]
 	y_coordinate = [np.mean([y_bins[i], y_bins[i+1]]) for i in range(nybins)]
 	for jz in range(nzbins):
 		h_3F.GetZaxis().SetRange(jz,jz)
 		slice = h_3F.Project3D("yx")
 		JES_0, JES_1, JER_0, JER_1, fits_by_pT = [], [], [], [], []
-		for jx in range(nxbins):
+		for jx in range(0, nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
 			fit_vals = []
 			for bin in range(0, nybins):
@@ -129,9 +133,9 @@ def PrepareJESnR(h_3F, name, outdir):
 		ress.append([x_coordinate, JER_0, JER_1])
 		fits.append([x_coordinate, fits_by_pT]) 
 
-	return means, ress, fits #returns almost (error)graphs
+	return means, ress, fits #returns almost (error)graphs implicitly
 
-def DrawJESnR(matrix_input, type, outdir, *comparison_labels): # v comparison_labels jsou sources...
+def DrawJESnR(matrix_input, type, outdir, *comparison_labels): # v comparison_labels jsou sources
 	type_appendix, type_suffix = type.split("_")
 	matrix_input = transpose_list(matrix_input)
 	for index, vct_datasamples in enumerate(matrix_input): #eta loop
@@ -161,8 +165,7 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels): # v comparison_la
 		plt.close()
 
 def DrawResponse(matrix_input, outdir, comparison_labels): #compares flavours, not centralities... thus impossible to be used for PbPb the classical way
-# DODESIGNOVAT JAK GRAF VYPADA -> log scale
-	
+	print("Draw responses")
 	matrix_input = transpose_list(matrix_input)
 	for index, vct_pT in enumerate(matrix_input): #eta loop
 		vct_pT = transpose_list(vct_pT)
@@ -172,11 +175,15 @@ def DrawResponse(matrix_input, outdir, comparison_labels): #compares flavours, n
 			fig = plt.figure()
 			for j in range (len(pT_data)): #dataset loop
 				plt.plot(fit_vals[j][k][0], fit_vals[j][k][1], linestyle="None", marker='o') #to be improved - various markers, f. e. from enumerate
+			plt.yscale("log")
+			plt.xlabel("response")
+			plt.ylabel("count [a. u.]")
+			plt.legend(comparison_labels)
 			plt.savefig(outdir+"/response/eta_"+str(eta_bins[index])+"_pT_"+str(round(pT_data[j][k]))+".png")
 			plt.close()
 
-def DrawProfiles(matrix_input, outdir, names, sources, type): #REMOVE pp settings; under development
-	print("Profil dimensions") # sources se vykresli pres sebe
+def DrawCounts(matrix_input, outdir, names, sources):
+	print("Draw count profiles") # sources se vykresli pres sebe
 	for k in range(len(matrix_input[0])):	#vars loop
 			name = names[k]
 			fig = plt.figure()
@@ -186,25 +193,47 @@ def DrawProfiles(matrix_input, outdir, names, sources, type): #REMOVE pp setting
 			for i in range(len(matrix_input)): #source vars	
 				plt.plot(matrix_input[i][k][0], matrix_input[i][k][1], linestyle="None", marker='o') #to be improved - various markers, f. e. from enumerate
 			plt.legend(sources)
-			plt.savefig(outdir+"/profiles/"+name+".png")
+			plt.savefig(outdir+"/counts/"+name+".png", dpi=300)
 			plt.close()
 
-def DrawMatrices(matrix_input, outdir, names, sources, type): #REMOVE pp settings; under development
-# posunout barmeters
-# omezit scale barmeteru -> vmin=None, vmax=None
-# JES, JER, count musi mit jina jmena, jinak je to bude ukladat pod sebe...
+def DrawProfiles(matrix_input, matrix_2_input, outdir, names, sources):
+	# each pT integrated resp(var) dependence is an independent dataline... all of them are placed in one, the same figure -> from JES, JER taken as errorbar
+	print("Draw profiles") # sources se vykresli vedle sebe
+	for k in range(len(matrix_input[0])):   #vars loop
+		name = names[k]
+		fig, ax = plt.subplots(ncols=len(matrix_input), nrows=1, figsize=(15*np.sqrt(len(matrix_input)), 15))
+		ax[0].set_ylabel(name)
+		for i in range(len(matrix_input)): #source var
+			for j in range(len(matrix_input[i][k][0])-1): #filling each pT dataline  with unc. as it's resolution
+				y_coordinate = [np.mean([matrix_input[i][k][1][index], matrix_input[i][k][1][index+1]]) for index in range(0, len(matrix_input[i][k][1])-1)] #index begins at zero
+				# y_coordinate in 2D matrix is the var coordinate
+				print(i, j, y_coordinate, transpose_list(matrix_input[i][k][2])[j])
+				ax[i].errorbar(y_coordinate, transpose_list(matrix_input[i][k][2])[j], yerr=transpose_list(matrix_2_input[i][k][2])[j], linestyle="None", marker="o")
+				# pridat label ke kazde dataline, jake to ma pT
+			ax[i].set_xlabel(name)
+			ax[i].set_title("Corr matrix for "+sources[i])
+		plt.savefig(outdir+"/profiles/"+name+".png", dpi=300)
+		plt.close()
 
-	print("Matrices dimensions") # sources se vykresli vedle sebe
+def DrawMatrices(matrix_input, outdir, names, sources, matrix_type):
+	print("Draw matrices " + matrix_type) # sources se vykresli vedle sebe
 	for k in range(len(matrix_input[0])):   #vars loop
 			name = names[k]
-			fig, ax = plt.subplots(nrows=len(matrix_input), ncols=1)
+			fig, ax = plt.subplots(ncols=len(matrix_input), nrows=1, figsize=(15*np.sqrt(len(matrix_input)), 15))
+			ax[0].set_ylabel(name)
+			Z = np.array([])
+			for i in range(len(matrix_input)): # we need to set a common colorscale, to be able to compare values
+				Z = np.append(Z, matrix_input[i][k][2])
 			for i in range(len(matrix_input)): #source vars
-				plc = ax[i].pcolormesh(matrix_input[i][k][0], matrix_input[i][k][1], matrix_input[i][k][2]) #to be improved - various markers, f. e. from enumerate
-				ax[i].set_ylabel(name)
+				print(name)
+				print(Z.min(), Z.max())
+
+				plc = ax[i].pcolormesh(matrix_input[i][k][0], matrix_input[i][k][1], matrix_input[i][k][2], vmin=Z.min(), vmax=Z.max())
+				# Jak funguje vmin, vmax ??? Vypadá to jak rozdíly od 1... to nechci.
 				ax[i].set_xlabel("pT")
 				ax[i].set_title("Corr matrix for "+sources[i])
-				fig.colorbar(plc)
-			plt.savefig(outdir+"/matrices/eta_"+name+".png")
+			fig.colorbar(plc, ax=ax[len(ax)-1])
+			plt.savefig(outdir+"/matrices/"+matrix_type+"_"+name+".png", dpi=300) #give dpi to all inputs in the quality for master thesis
 			plt.close()
 
 def Make3DProjection(h_3F, name, outdir):
@@ -214,14 +243,13 @@ def Make3DProjection(h_3F, name, outdir):
 	z_coordinate = [np.mean([z_bins[i], z_bins[i+1]]) for i in range(nzbins)]
 	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
 	total_jet_count = h_3F.GetEntries()
-	corr_JES, corr_JER, corr_count, corr_count_pT_integrated = [], [], [], []
-
+	corr_JES, corr_JER, corr_count, corr_count_pT_integrated, response_by_var = [], [], [], [], []
 	for jz in range(nzbins):
 		h_3F.GetZaxis().SetRange(jz,jz)				
 		slice = h_3F.Project3D("yx")
 		corr_JES_val, corr_JER_val, corr_count_val = [], [], []
 		corr_count_pT_integrated.append([z_coordinate[jz], slice.GetEntries()/total_jet_count])
-		for jx in range(nxbins):
+		for jx in range(0, nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
 			corr_count_val.append(ySlice.GetEntries()/total_jet_count)
 			mu, sigma, emu, esigma = nan, nan, nan, nan		

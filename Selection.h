@@ -58,9 +58,9 @@ public:
     	//loop filling InspectedVars with Variables type with filled constructors values taken from configfile
         // InspectedVars je zde, já to jen v rámci Configure naplním
 
-	Variables pT = Variables("pT", 40, 1050);
+	Variables pT = Variables("pT", 30, 1050);
         Variables response = Variables("response", 99, 0, 2);
-	Variables eta = Variables("eta", {0.0, 0.3, 0.8, 2.1, 3.2});
+	Variables eta = Variables("eta", {0.0, 0.3, 0.8, 1.2, 2.1, 2.8, 3.2, 4.5});
         Variables ntrk = Variables("ntrk", 40, 0, 40);
 	Variables N90 = Variables("N90", 40, 0, 40);
         //Variables sumpTtrk = Variables("SumpTtrk", 100, 0, 1000000000); // ?? proper norm ?? move back to rtrk

@@ -39,11 +39,11 @@ def GenerateCorrMatrices(inputdir, source, outdir): #source is a field of source
 					histos.append(corr_count)
 					histos.append(corr_count_pT_integrated)
 	if len(spectra_mu_pp) != 0:
-		DrawJESnR(spectra_mu_pp, "JES_pp", outdir, source)
-		DrawJESnR(spectra_sigma_pp, "JER_pp", outdir, source)
+		#DrawJESnR(spectra_mu_pp, "JES_pp", outdir, source)
+		#DrawJESnR(spectra_sigma_pp, "JER_pp", outdir, source)
 	if len(spectra_mu_PbPb) != 0:		
-		DrawJESnR(spectra_mu_PbPb, "JES_PbPb", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
-		DrawJESnR(spectra_sigma_PbPb, "JER_PbPb", outdir)
+		#DrawJESnR(spectra_mu_PbPb, "JES_PbPb", outdir) # input is matrix of centrality vs. eta containing TH1 histos for both - mu and sigma
+		#DrawJESnR(spectra_sigma_PbPb, "JER_PbPb", outdir)
 	if len(source) == 1: # spare time, when we want to calculate ONLY JES/JER
 		WriteIn(histos, outdir, s)
 
@@ -169,7 +169,6 @@ def Make3DProjection(h_3F, name, outdir):
 	#Draw(corr_JES, outdir+"matrices/JES_"+name+".png")		
 	#Draw(corr_count, outdir+"matrices/count_"+name+".png")
 	#Draw(corr_count_pT_integrated, outdir+"matrices/count_int_"+name+".png")
-	# Since I want better processing and comparisons, I am doing another postprocessing stuff later on...
 
 	return corr_JES, corr_JER, corr_count, corr_count_pT_integrated
 

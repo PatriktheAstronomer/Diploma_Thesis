@@ -143,7 +143,7 @@ void Selection::EventLoop(Long64_t nEntries)
 				
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 6) continue;
+				if (truth_jet_flavor->at(j) != 5) continue;
 
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
@@ -155,7 +155,7 @@ void Selection::EventLoop(Long64_t nEntries)
 				for (int k = 0; k < EnergySamplingVars.size(); k++) energySamplingVars.push_back(jet_EnergyPerSampling->at(j).at(k));
 				inspectedVars.insert(inspectedVars.end(), energySamplingVars.begin(), energySamplingVars.end());
 				unsigned int varCount = inspectedVars.size();
-
+				
 				if (InspectedVars.size() != varCount){
 					std::cout << "Wrong setup of inspected variables - varCount: " << varCount << " but InspectedVars.size()" << InspectedVars.size();
 					exit (EXIT_FAILURE);
@@ -178,7 +178,7 @@ void Selection::EventLoop(Long64_t nEntries)
 				for (unsigned int k = 0; k < varCount; k++){
 					//std::cout << "var number k: " << k << " inspected number j: " << j << "\n"; 
 					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[k], MC_weight);
-					// Note -> there used to be inspectedVars[j] instead of [k]
+                                        // Note -> there used to be inspectedVars[j] instead of [k]
 					//std::cout << "Written val: " << inspectedVars[k] << "\n";
 					// pp is written into 0th component of the responseCentrVars, PbPb into 0-7th as pp has the value 0
 				}
