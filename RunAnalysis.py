@@ -7,6 +7,7 @@ import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 from Process_data_simplified import *
+from ML_processing import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
@@ -17,16 +18,16 @@ input_ppdata="user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
 #"user.mrybar.PbPb_MC_ForPatrik_r002_ANALYSIS.root"
 
 preselected_PbPbdata = {"PbPb_preselected"}
-preselected_ppdata = {"pp_inclusive_quark_P8", "pp_gluon_P8"}
-# implement this feature as a set of output arguments, also idealy placed into config file ---> python reads congif and give the flags to c++ constructors
+#preselected_ppdata = {"pp_inclusive_quark_P8", "pp_gluon_P8"}
+preselected_ppdata = {"H7_quark_inclusive", "H7_gluon"}
 
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 10
 
 doCompile = True # flag variable declaring, which macros should be compiled and which not
-doSelection = True # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
-calculateStats = False # flag specifying whether to do calculate statistical quantities or not
+doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
+calculateStats = True # flag specifying whether to do calculate statistical quantities or not
 doML = False # flag specifying, wherther ML learining and testing should be done
 
 if __name__ == '__main__':
@@ -70,16 +71,16 @@ if __name__ == '__main__':
 		pp_selection.EventLoop()                  
 		#PbPb_selection.EventLoop()
 
-		pp_selection.Write(output_folder+"test")
+		pp_selection.Write(output_folder+"H7_quark_inclusive")
 		#PbPb_selection.Write(output_folder+"PbPb_preselection")
 
 
-# Statitics
+# Statistics
 	f.write("calculateStats flag set to "+str(calculateStats)+"\n")
 	if calculateStats:
 
 # Correlation matrix and JES/JER production
-		#GenerateJERS(output_folder, preselected_ppdata, output_folder)
+		GenerateJERS(output_folder, preselected_ppdata, output_folder)
 		# JES/JER can be produced for more datasamples, corrmatrices only for a certain one
 		#GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
 		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
@@ -87,15 +88,10 @@ if __name__ == '__main__':
 
 ### TOHLE NIZ NAS NEZAJIMA ZATIM:
 # Machine learning part			
-	f.write("doML flag set to "+str(doML)+"\n")
-	if doML:
-		with uproot.open(input_folder+input_ppdata) as pp_data:
-			for key in pp_data:
-				print(np.asarray(pp_data[key].values()))
-	# read pp_scalar_sample input...
+	f.write("Machine learning \n")
+	print("Doing ML learning")
 
-	#ML-training on the pp_training
-	# KERAS od Jennifer nebo sklearn	
+	# nejprve napocitat pro kazdy PbPb sample RMSE, pak pro každý sample podle centrality !
 
 
 	# pro PbPb data
@@ -104,4 +100,4 @@ if __name__ == '__main__':
 #Correlation test in repaired PbPb data
 	# vyplotim si pres sebe Gaussiany (logaritmicke) oproti raw selekci ---> funkce compare datafiles!
 	# porovnavat numericke vysledky pro ruzna run_numbers... Statistika, jak se zlepsuje performance site
-	# ROC curve a integral z nej -> snad bude mit implementovane v sobe KERAS
+	# ROC curve a integral z nej

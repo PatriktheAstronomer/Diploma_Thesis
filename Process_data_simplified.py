@@ -2,10 +2,17 @@ from ROOT import TFile, gROOT, TH3, TH2D, TH1D, TF1, TCanvas, TLegend, TLatex
 import numpy as np
 from numpy import nan
 import matplotlib.pyplot as plt
+import pylab
 
 import sys
 sys.path.insert(0, '/home/novotnyp/Diploma_Thesis/lib')
 from TH1_style import *
+
+
+# set for 15 markers and 15 colors
+markers = ["o", "v", "<", ">", "^", "s", "P", "*", "+", "X", "D", "p", "d", "h", "x"]
+cm = pylab.get_cmap("gist_rainbow")
+
 
 eta_bins = [0.0, 0.3, 0.8, 1.2, 1.8, 2.1, 3.2, 4.5] # HARD-TYPED NOT NECESSARLY, BUT NOT CHANGED OFTEN
 
@@ -98,7 +105,7 @@ def GenerateCorrMatrices(inputdir, source, outdir):
 		DrawMatrices(corr_JER_matrix, outdir, var_names, source, "JER")
 		DrawMatrices(corr_count_matrix, outdir, var_names, source, "count")
 		DrawCounts(corr_count_pT_integrated_matrix, outdir, var_names, source)
-                DrawProfiles(corr_JES_matrix, corr_JER_matrix, outdir, var_names, source)
+		DrawProfiles(corr_JES_matrix, corr_JER_matrix, outdir, var_names, source)
 
 def PrepareJESnR(h_3F, name, outdir):
 	nzbins = h_3F.GetNbinsZ() #projection over eta
@@ -114,7 +121,7 @@ def PrepareJESnR(h_3F, name, outdir):
 		h_3F.GetZaxis().SetRange(jz,jz)
 		slice = h_3F.Project3D("yx")
 		JES_0, JES_1, JER_0, JER_1, fits_by_pT = [], [], [], [], []
-		for jx in range(0, nxbins):
+		for jx in range(nxbins):
 			ySlice = slice.ProjectionY("meta", jx, jx)
 			fit_vals = []
 			for bin in range(0, nybins):
@@ -172,10 +179,18 @@ def DrawResponse(matrix_input, outdir, comparison_labels): #compares flavours, n
 		pT_data = vct_pT[0]
 		fit_vals = vct_pT[1]
 		for k in range (len(pT_data[0])): #pT loop
+			#pT_data_extended = np.append(pT_data[j, 1000) ---> implementnout dole, pT_data.T[0] poslu do pT_data_extended...
+			#eta_bins_extended = np.append(eta_bins, 4.0)
 			fig = plt.figure()
 			for j in range (len(pT_data)): #dataset loop
-				plt.plot(fit_vals[j][k][0], fit_vals[j][k][1], linestyle="None", marker='o') #to be improved - various markers, f. e. from enumerate
+				if np.sum(fit_vals[j][k][1]) == 0:
+					continue
+				plt.plot(fit_vals[j][k][0], fit_vals[j][k][1], linestyle="None", marker='o', ms = 10)
 			plt.yscale("log")
+	
+			#print(str(eta_bins[index+1]), str(round(pT_data[j][k+1])))
+			#plt.title("response in range of eta ("+str(eta_bins[index])+", "+str(eta_bins[index+1])+") & pT ("+str(round(pT_data[j][k]))+", "+str(round(pT_data[j][k+1]+")")))
+			
 			plt.xlabel("response")
 			plt.ylabel("count [a. u.]")
 			plt.legend(comparison_labels)
@@ -189,9 +204,9 @@ def DrawCounts(matrix_input, outdir, names, sources):
 			fig = plt.figure()
 			plt.title("Profile for "+ name)
 			plt.ylabel("relative count")
-			plt.xlabel(name)
+			plt.xlabel(name.split("_")[0])
 			for i in range(len(matrix_input)): #source vars	
-				plt.plot(matrix_input[i][k][0], matrix_input[i][k][1], linestyle="None", marker='o') #to be improved - various markers, f. e. from enumerate
+				plt.plot(matrix_input[i][k][0], matrix_input[i][k][1], linestyle="None", marker=markers[i], ms = 10) #small number of inputs, handle color setting on its own
 			plt.legend(sources)
 			plt.savefig(outdir+"/counts/"+name+".png", dpi=300)
 			plt.close()
@@ -199,39 +214,49 @@ def DrawCounts(matrix_input, outdir, names, sources):
 def DrawProfiles(matrix_input, matrix_2_input, outdir, names, sources):
 	# each pT integrated resp(var) dependence is an independent dataline... all of them are placed in one, the same figure -> from JES, JER taken as errorbar
 	print("Draw profiles") # sources se vykresli vedle sebe
+	pT_bins = [str(np.round(matrix_input[0][0][0][l]))+"-"+str(np.round(matrix_input[0][0][0][l+1])) for l in range(len(matrix_input[0][0][0])-1)]
 	for k in range(len(matrix_input[0])):   #vars loop
 		name = names[k]
 		fig, ax = plt.subplots(ncols=len(matrix_input), nrows=1, figsize=(15*np.sqrt(len(matrix_input)), 15))
-		ax[0].set_ylabel(name)
+		ax[0].set_xlabel(name.split("_")[0])
+		ax[0].set_ylabel("response") # pridat mu+-sigma
+		ax[0].set_ylim([0.8, 1.2])
 		for i in range(len(matrix_input)): #source var
-			for j in range(len(matrix_input[i][k][0])-1): #filling each pT dataline  with unc. as it's resolution
+			pt_count = len(matrix_input[i][k][0])-1
+			for j in range(pt_count): #filling each pT dataline  with unc. as it's resolution
 				y_coordinate = [np.mean([matrix_input[i][k][1][index], matrix_input[i][k][1][index+1]]) for index in range(0, len(matrix_input[i][k][1])-1)] #index begins at zero
 				# y_coordinate in 2D matrix is the var coordinate
-				print(i, j, y_coordinate, transpose_list(matrix_input[i][k][2])[j])
-				ax[i].errorbar(y_coordinate, transpose_list(matrix_input[i][k][2])[j], yerr=transpose_list(matrix_2_input[i][k][2])[j], linestyle="None", marker="o")
-				# pridat label ke kazde dataline, jake to ma pT
-			ax[i].set_xlabel(name)
+				ax[i].errorbar(y_coordinate, transpose_list(matrix_input[i][k][2])[j], yerr=transpose_list(matrix_2_input[i][k][2])[j], linestyle="None", mec=cm(1.*j/pt_count), marker=markers[j], ms = 10)
+			ax[i].set_xlabel(name.split("_")[0])
 			ax[i].set_title("Corr matrix for "+sources[i])
+			ax[i].set_ylim([0.8, 1.2])
+			ax[i].legend(pT_bins) # dataseries labels
+
 		plt.savefig(outdir+"/profiles/"+name+".png", dpi=300)
 		plt.close()
 
 def DrawMatrices(matrix_input, outdir, names, sources, matrix_type):
 	print("Draw matrices " + matrix_type) # sources se vykresli vedle sebe
+	if matrix_type == "JES": # Zvetos controls boundaries and outliers
+		Zvetos = [0.8, 1.2]
+	elif matrix_type == "JER":
+		Zvetos = [0.0, 0.5]
+	else:
+		Zvetos = [0, 1]
+
 	for k in range(len(matrix_input[0])):   #vars loop
 			name = names[k]
 			fig, ax = plt.subplots(ncols=len(matrix_input), nrows=1, figsize=(15*np.sqrt(len(matrix_input)), 15))
-			ax[0].set_ylabel(name)
+			ax[0].set_ylabel(name.split("_")[0])
 			Z = np.array([])
 			for i in range(len(matrix_input)): # we need to set a common colorscale, to be able to compare values
 				Z = np.append(Z, matrix_input[i][k][2])
+				Z = Z[~np.isnan(Z)] #NaN filter
 			for i in range(len(matrix_input)): #source vars
-				print(name)
-				print(Z.min(), Z.max())
-
-				plc = ax[i].pcolormesh(matrix_input[i][k][0], matrix_input[i][k][1], matrix_input[i][k][2], vmin=Z.min(), vmax=Z.max())
-				# Jak funguje vmin, vmax ??? Vypadá to jak rozdíly od 1... to nechci.
+				plc = ax[i].pcolormesh(matrix_input[i][k][0], matrix_input[i][k][1], matrix_input[i][k][2], vmin=max(Z.min(), Zvetos[0]), vmax=min(Z.max(), Zvetos[1]))
 				ax[i].set_xlabel("pT")
 				ax[i].set_title("Corr matrix for "+sources[i])
+				ax[i].set_xscale("log")
 			fig.colorbar(plc, ax=ax[len(ax)-1])
 			plt.savefig(outdir+"/matrices/"+matrix_type+"_"+name+".png", dpi=300) #give dpi to all inputs in the quality for master thesis
 			plt.close()
@@ -241,24 +266,28 @@ def Make3DProjection(h_3F, name, outdir):
 	nxbins = h_3F.GetNbinsX() #projection over pT
 	z_bins = np.asarray(h_3F.GetZaxis().GetXbins())
 	z_coordinate = [np.mean([z_bins[i], z_bins[i+1]]) for i in range(nzbins)]
-	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())
-	total_jet_count = h_3F.GetEntries()
-	corr_JES, corr_JER, corr_count, corr_count_pT_integrated, response_by_var = [], [], [], [], []
-	for jz in range(nzbins):
+	x_bins = np.asarray(h_3F.GetXaxis().GetXbins())	
+	total_jet_count = h_3F.Integral()
+	corr_JES, corr_JER, corr_count, corr_count_pT_integrated = [], [], [], []
+	for jz in range(1, nzbins+1):
 		h_3F.GetZaxis().SetRange(jz,jz)				
-		slice = h_3F.Project3D("yx")
-		corr_JES_val, corr_JER_val, corr_count_val = [], [], []
-		corr_count_pT_integrated.append([z_coordinate[jz], slice.GetEntries()/total_jet_count])
-		for jx in range(0, nxbins):
-			ySlice = slice.ProjectionY("meta", jx, jx)
-			corr_count_val.append(ySlice.GetEntries()/total_jet_count)
+		corr_JES_val, corr_JER_val, corr_count_val = [], [], []		
+		corr_count_per_slice = 0
+		for jx in range(1, nxbins+1):
+			h_3F.GetXaxis().SetRange(jx,jx)
+			ySlice = h_3F.Project3D("y")
+			zSlice = h_3F.Project3D("z")
+			corr_count_val_pT = zSlice.Integral()/total_jet_count
+			corr_count_val.append(corr_count_val_pT)
+			corr_count_per_slice += corr_count_val_pT
 			mu, sigma, emu, esigma = nan, nan, nan, nan		
 			if(ySlice.GetEntries() > 25):
-				mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/"+name+"_pT_"+str(round(x_bins[jx],1))+"_val_"+str(round(z_bins[jz],1))+".png", x_bins[jx])
+				mu, sigma, emu, esigma = FitResponse(ySlice, outdir+"fits/"+name+"_pT_"+str(round(x_bins[jx-1],1))+"_val_"+str(round(z_bins[jz-1],1))+".png", x_bins[jx-1])
 				if(emu > 0.5 or esigma > 0.5):
 					mu, sigma = nan, nan	
 			corr_JES_val.append(mu)
 			corr_JER_val.append(sigma/mu)
+		corr_count_pT_integrated.append([z_coordinate[jz-1], corr_count_per_slice])
 		corr_JES.append(corr_JES_val)
 		corr_JER.append(corr_JER_val)
 		corr_count.append(corr_count_val)
@@ -270,7 +299,7 @@ def FitResponse(ySlice, outname, pTt):
 	RMS = ySlice.GetRMS()
 	if (pTt > 300):	fitF = TF1("fitF", "gaus", mean-3*RMS, mean+3*RMS)
 	else: ySlice.Rebin(2)
-	if (pTt < 50): fitF = TF1("fitF", "gaus", mean-RMS, mean+2*RMS)
+	if (pTt < 50): fitF = TF1("fitF", "gaus", mean-1.5*RMS, mean+2*RMS)
 	else: fitF = TF1("fitF", "gaus", mean-2*RMS, mean+2*RMS)
 	ySlice.Fit("fitF", "RQ")
 	d = TCanvas("D1","",800,600)

@@ -8,23 +8,6 @@ Selection::Selection(TString source, TString treeName, TString type)
 	GetTTree();
 }
 
-void Selection::Configure(TString variables_data, TString vetos_data)
-{
-// Under development
-/*
-zde pres fstream nactu data o variables, vytvorim variables a nakonec
-je push_backnu do InspectedVars
-
-	ifstream infile;
-	infile.open(variables_data);
-	infile >> data;
-	cout << data << endl;
-	infile.close();
-// pouze pro debugging, nejprve odladit co načítám za stringy
-// ---> zacnu jako separe kod bokem
-*/
-}
-
 void Selection::SetDataType(TString type)
 {
   if(type == "pp"){
@@ -135,16 +118,15 @@ void Selection::EventLoop(Long64_t nEntries)
 		if(i%statSize==0) std::cout << "Processing event: " << i << std::endl;
         	Int_t jet_size = truth_jet_pt->size();
         	if (jet_size){
-                	for (int j = 0; j < jet_size; j++){
-				// there will be a veto function
-				// we should figure out the list of given vetos, prolly could be read (and thus easily printed) from an external configural file...
-				
+                	for (int j = 0; j < jet_size; j++){					
 				if (jet_pt->at(j) == -999) continue; // mismatching
-				
+				if (jet_pt->at(j) < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
+				if (jet_pt->at(j) < 30 && m_dataType == 1) continue; // ! pT veto per jet in PbPb
+
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				if (truth_jet_flavor->at(j) != 5) continue;
-
+				if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
+				
 				Float_t pTt = truth_jet_pt->at(j);
 				Float_t pTr = jet_pt->at(j);
 		

@@ -108,8 +108,6 @@ public:
 	// end of the declaration --------------------------------
 
 	Selection(TString source, TString treeName, TString type);
-	void Configure(TString variables_data, TString vetos_data); // dopsat v C++, adresa na cteni .data filu, nejdriv variables, pak i vetos...
-
 	void SetSource(TString source);
 	void SetTreeName(TString treeName);
 	void SetDataType(TString type);
