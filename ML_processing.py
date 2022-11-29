@@ -6,14 +6,6 @@ from sklearn.metrics import mean_squared_error
 
 # we do not apply any cuts or vetos! we just do standardization and feature engineering
 
-def get_RMSE(source, prediction_branch, target_branch):
-	# run this for overal scalar PbPb input as well as for centrality based - cuts
-	events = uproot.open(source+".root:events")
-	rmse = sklearn.metrics.mean_squared_error(events[target_branch].array(library="np"), events[prediction_branch].array(library="np"), squared=False)
-	return rmse
-
-# create PbPb inputs by centrality and the overall one to obtain RMSE of them 
-
 def read_scalar_datafile(source, tree, list_of_input_branches, target_branch):
 	events = uproot.open(source+".root:"+tree)
 	dataset = []

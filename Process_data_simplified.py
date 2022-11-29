@@ -34,15 +34,17 @@ def GenerateJERS(inputdir, source, outdir):
 				if "eta" in key2.ReadObj().GetName():
 					#for JES/JER in pp case, comparison of several inputs... from sources, whereas for PbPb	it's several TH3 in one	source
 					if "PbPb" in s:
-						mu, sigma = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
+						mu, sigma, fit = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
 						spectra_mu_PbPb.append(mu)
 						spectra_sigma_PbPb.append(sigma)
+						#pridelat fit handling
+
 						# ZKUSME ZDE PRIDAT PBPB FIT A PLOTNOUT... POKUD BUDE FUNGOVAT, TAK ZJEDNODUSSIM pp a PbPb set type podle len(source) !!!
 						# ZUSTANE UZ PAK JEN JEDEN IF A JEDNO TROJVOLANI PRINTU
 
 						continue
 						# returns native TH1 in eta bins
-					if "pp" in s:
+					if 1:
 						mu, sigma, fit = PrepareJESnR(key2.ReadObj(), key2.ReadObj().GetName(), outdir)
 						spectra_mu_pp.append(mu)
 						spectra_sigma_pp.append(sigma)
@@ -121,10 +123,10 @@ def PrepareJESnR(h_3F, name, outdir):
 		h_3F.GetZaxis().SetRange(jz,jz)
 		slice = h_3F.Project3D("yx")
 		JES_0, JES_1, JER_0, JER_1, fits_by_pT = [], [], [], [], []
-		for jx in range(nxbins):
+		for jx in range(1, nxbins+1):
 			ySlice = slice.ProjectionY("meta", jx, jx)
 			fit_vals = []
-			for bin in range(0, nybins):
+			for bin in range(1, nybins+1):
 				fit_vals.append(ySlice.GetBinContent(bin))
 	
 			mu, sigma, emu, esigma = nan, nan, nan, nan #Nan isnt plotted
@@ -150,11 +152,11 @@ def DrawJESnR(matrix_input, type, outdir, *comparison_labels): # v comparison_la
 		plt.xscale("log")
 		plt.xlabel("$p_{T}$")
 		if type_appendix == "JES":
-			plt.ylim([0.9, 1.1])
-			plt.ylabel("$\mu$ response") #to be improved - better label
+			plt.ylim([0.97, 1.07])
+			plt.ylabel("$\mu(R)$") #to be improved - better label
 		elif type_appendix == "JER":
-			plt.ylim([0.0, 0.3])
-			plt.ylabel("$\sigma$ of response") #to be improved - better label
+			plt.ylim([0.0, 0.35])
+			plt.ylabel("$\sigma(R)$") #to be improved - better label
 
 		plt.title(type_appendix+" for eta "+str(eta_bins[index])+"-"+str(eta_bins[index+1]))
 		for data in vct_datasamples: #datasamples loop

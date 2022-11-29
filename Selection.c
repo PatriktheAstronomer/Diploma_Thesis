@@ -65,7 +65,8 @@ void Selection::SetBranchAddress()
 void Selection::CreateBranchScalar()
 {
    std::cout << "Setting branch address for scalar variables" << "\n";
-   m_treeout->Branch("MC_weight_scalar", &MC_weight_scalar, "MC_weight/D"); // of course MC_weight is scalar all the time, however there each occurance of this value is multiplied by jet size
+   m_treeout->Branch("MC_weight_scalar", &MC_weight_scalar, "MC_weight/D"); 
+   // of course MC_weight is scalar all the time, however there each occurance of this value is multiplied by jet size
    m_treeout->Branch("jet_eta_scalar", &jet_eta_scalar, "float");
    m_treeout->Branch("jet_pt_scalar", &jet_pt_scalar, "float");
    m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
@@ -76,7 +77,7 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
 // used in the scalar generator process
 
-// create here calo variables later, when needed
+// create here calo variables !!!
 
 }
 
@@ -119,16 +120,18 @@ void Selection::EventLoop(Long64_t nEntries)
         	Int_t jet_size = truth_jet_pt->size();
         	if (jet_size){
                 	for (int j = 0; j < jet_size; j++){					
-				if (jet_pt->at(j) == -999) continue; // mismatching
-				if (jet_pt->at(j) < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
-				if (jet_pt->at(j) < 30 && m_dataType == 1) continue; // ! pT veto per jet in PbPb
+                                Float_t pTt = truth_jet_pt->at(j);
+                                Float_t pTr = jet_pt->at(j);
+
+				// if (pTr  == -999) continue; // mismatching ---> contained in the next ones
+				if (pTr < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
+				if (pTr < 30 && m_dataType == 1) continue; // ! pT veto per jet in PbPb
 
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
-				
-				Float_t pTt = truth_jet_pt->at(j);
-				Float_t pTr = jet_pt->at(j);
+				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
+				//if (truth_jet_flavor->at(j) != 21) continue;				
+
 		
 				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_N90->at(j), jet_width->at(j)}; //rucne setupovane
 
@@ -155,19 +158,54 @@ void Selection::EventLoop(Long64_t nEntries)
    					truth_jet_flavor_scalar = truth_jet_flavor->at(j);	
 				m_treeout->Fill();		
 				}
-				if (jet_pt->at(j) <= 0 || truth_jet_pt->at(j) <= 0) continue; // matched based distance
+
+
+
+				// V ramci optimatimalizace by bylo zajimave se podivat, jestli se tohle vubec deje... prijde mi superfluous
+				if (pTr  <= 0 || pTt  <= 0) continue; // matched based distance
 				if (event_Centrality < 0) continue;					
+
+
 				for (unsigned int k = 0; k < varCount; k++){
-					//std::cout << "var number k: " << k << " inspected number j: " << j << "\n"; 
 					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[k], MC_weight);
-                                        // Note -> there used to be inspectedVars[j] instead of [k]
-					//std::cout << "Written val: " << inspectedVars[k] << "\n";
 					// pp is written into 0th component of the responseCentrVars, PbPb into 0-7th as pp has the value 0
 				}
 			}
                 }
      	}
 }
+
+void Selection::CalcRMSE(Float_t jetPtVeto) // mismatching automatically solved
+{
+        int statSize = 1;
+	std::vector<Int_t> number_of_records(m_centralityBinsN, 0);
+	std::vector<Float_t> error_vec(m_centralityBinsN, 0);
+        for (Long64_t i=0 ; i<m_nEntries; i++) {
+                m_tree->GetEntry(i);
+                if(i!=0){
+                        double power=std::floor(log10(i));
+                        statSize=(int)std::pow(10.,power);
+                }
+                if(i%statSize==0) std::cout << "Processing event: " << i << std::endl;
+                Int_t jet_size = truth_jet_pt->size();
+                if (jet_size){
+                        for (int j = 0; j < jet_size; j++){
+                                if (jet_pt->at(j) < jetPtVeto) continue; // pT veto for given statistics to be described
+				error_vec[event_Centrality] += (jet_pt->at(j)-truth_jet_pt->at(j))*(jet_pt->at(j)-truth_jet_pt->at(j));
+				number_of_records[event_Centrality]++;
+			}
+		}
+	}
+
+
+	for (int c=0; c < m_centralityBinsN; c++) {
+		std::cout.precision(5);
+		std::cout << "Centrality " << c << " has RMSE " << sqrt(error_vec[c]/number_of_records[c]) << std::endl;
+	}
+
+
+}
+
 
 void Selection::Write(string outName)
 {
