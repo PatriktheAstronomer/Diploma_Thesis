@@ -1,18 +1,15 @@
 #include "Variables.h"
 Variables::Variables(){}
-Variables::Variables(TString name, Int_t bin_count, Float_t lower_range, Float_t upper_range)
+Variables::Variables(TString name, Int_t bin_count, Float_t lower_range, Float_t upper_range, TString type)
 {
 	SetName(name);
-	CalculateUniBins(bin_count, lower_range, upper_range);
+	if (type == "uni"){
+		CalculateUniBins(bin_count, lower_range, upper_range);
+	}
+	else if (type == "log"){
+		CalculateLogBins(bin_count, lower_range, upper_range);
+	}
 	SetBinCount();	
-}
-
-
-Variables::Variables(TString name, Float_t lower_range, Float_t upper_range)
-{
-        SetName(name);
-        CalculateLogBins(lower_range, upper_range);
-	SetBinCount();
 }
 
 Variables::Variables(TString name, std::vector<Float_t> bins)
@@ -27,14 +24,12 @@ void Variables::SetName(TString name)
 	m_name = name;
 }
 
-void Variables::CalculateLogBins(Float_t lower_range, Float_t upper_range)
+void Variables::CalculateLogBins(Int_t bin_count, Float_t lower_range, Float_t upper_range)
 { 
 	lower_range = log10(lower_range);
-	int i = 0;
-	while(upper_range > pow(10, lower_range + i* m_firstBinWidth)){
-		m_bins.push_back(pow(10, lower_range + i * m_firstBinWidth));
-		i++;
-	}
+	upper_range = log10(upper_range);
+	auto vlog = nzl::nice::make_logspace<std::vector<Float_t>>(lower_range, upper_range, bin_count);
+	for (const auto & item : vlog) m_bins.push_back(item);
 }
 
 void Variables::CalculateUniBins(Int_t bin_count, Float_t lower_range, Float_t upper_range)

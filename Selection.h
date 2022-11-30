@@ -58,49 +58,49 @@ public:
     	//loop filling InspectedVars with Variables type with filled constructors values taken from configfile
         // InspectedVars je zde, já to jen v rámci Configure naplním
 
-	Variables pT = Variables("pT", 30, 1050);
-        Variables response = Variables("response", 99, 0, 2);
+	Variables pT = Variables("pT", 15, 30, 1050, "log");
+        Variables response = Variables("response", 99, 0, 2, "uni");
 	Variables eta = Variables("eta", {0.0, 0.3, 0.8, 1.2, 2.1, 2.8, 3.2, 4.5});
-        Variables ntrk = Variables("ntrk", 40, 0, 40);
-	Variables N90 = Variables("N90", 40, 0, 40);
+        Variables ntrk = Variables("ntrk", 50, 0, 50, "uni");
+	Variables N90 = Variables ("N90", 15, 0.01, 50.265, "log");
         //Variables sumpTtrk = Variables("SumpTtrk", 100, 0, 1000000000); // ?? proper norm ?? move back to rtrk
 
 	// only trks above 4 GeV used, ghost associated trks
-        Variables width = Variables("width", 20, 0, 1);
+        Variables width = Variables("width", 30, 0.0001, 1, "log");
 
         std::vector<Variables> InspectedVars = {eta, ntrk, N90, width}; // eta is the first, for purpose of JES/JER diagrams
 	
 	// section with calo variables:
-	Variables PreSamplerB = Variables("Rel. fraction of E in PreSamplerB", 50, 0, 1);
-	Variables EMB1 = Variables("Rel. fraction of E in EMB1", 50, 0, 1);
-	Variables EMB2 = Variables("Rel. fraction of E in EMB2", 50, 0, 1);
-	Variables EMB3 = Variables("Rel. fraction of E in EMB3", 50, 0, 1);
+	Variables PreSamplerB = Variables("Rel. fraction of E in PreSamplerB", 30, 0.0001, 1, "log");
+	Variables EMB1 = Variables("Rel. fraction of E in EMB1", 30, 0.0001, 1, "log");
+	Variables EMB2 = Variables("Rel. fraction of E in EMB2", 30, 0.0001, 1, "log");
+	Variables EMB3 = Variables("Rel. fraction of E in EMB3", 30, 0.0001, 1, "log");
 
-	Variables PreSamplerE = Variables("Rel. fraction of E in PreSamplerE", 50, 0, 1);
-        Variables EME1 = Variables("Rel. fraction of E in EME1", 50, 0, 1);
-        Variables EME2 = Variables("Rel. fraction of E in EME2", 50, 0, 1);
-        Variables EME3 = Variables("Rel. fraction of E in EME3", 50, 0, 1);
+	Variables PreSamplerE = Variables("Rel. fraction of E in PreSamplerE", 30, 0.0001, 1, "log");
+        Variables EME1 = Variables("Rel. fraction of E in EME1", 30, 0.0001, 1, "log");
+        Variables EME2 = Variables("Rel. fraction of E in EME2", 30, 0.0001, 1, "log");
+        Variables EME3 = Variables("Rel. fraction of E in EME3", 30, 0.0001, 1, "log");
 
-        Variables HEC0 = Variables("Rel. fraction of E in HEC0", 50, 0, 1);
-        Variables HEC1 = Variables("Rel. fraction of E in HEC1", 50, 0, 1);
-        Variables HEC2 = Variables("Rel. fraction of E in HEC2", 50, 0, 1);
-        Variables HEC3 = Variables("Rel. fraction of E in HEC3", 50, 0, 1);
+        Variables HEC0 = Variables("Rel. fraction of E in HEC0", 30, 0.0001, 1, "log");
+        Variables HEC1 = Variables("Rel. fraction of E in HEC1", 30, 0.0001, 1, "log");
+        Variables HEC2 = Variables("Rel. fraction of E in HEC2", 30, 0.0001, 1, "log");
+        Variables HEC3 = Variables("Rel. fraction of E in HEC3", 30, 0.0001, 1, "log");
 
-        Variables TileBar0 = Variables("Rel. fraction of E in TileBar0", 50, 0, 1);
-        Variables TileBar1 = Variables("Rel. fraction of E in TileBar1", 50, 0, 1);
-        Variables TileBar2 = Variables("Rel. fraction of E in TileBar2", 50, 0, 1);
+        Variables TileBar0 = Variables("Rel. fraction of E in TileBar0", 30, 0.0001, 1, "log");
+        Variables TileBar1 = Variables("Rel. fraction of E in TileBar1", 30, 0.0001, 1, "log");
+        Variables TileBar2 = Variables("Rel. fraction of E in TileBar2", 30, 0.0001, 1, "log");
         
-	Variables TileGap1 = Variables("Rel. fraction of E in TileGap1", 50, 0, 1);
-        Variables TileGap2 = Variables("Rel. fraction of E in TileGap2", 50, 0, 1);
-        Variables TileGap3 = Variables("Rel. fraction of E in TileGap3", 50, 0, 1);
+	Variables TileGap1 = Variables("Rel. fraction of E in TileGap1", 30, 0.0001, 1, "log");
+        Variables TileGap2 = Variables("Rel. fraction of E in TileGap2", 30, 0.0001, 1, "log");
+        Variables TileGap3 = Variables("Rel. fraction of E in TileGap3", 30, 0.0001, 1, "log");
 
-	Variables TileExt0 = Variables("Rel. fraction of E in TileExt0", 50, 0, 1);
-        Variables TileExt1 = Variables("Rel. fraction of E in TileExt1", 50, 0, 1);
-        Variables TileExt2 = Variables("Rel. fraction of E in TileExt2", 50, 0, 1);
+	Variables TileExt0 = Variables("Rel. fraction of E in TileExt0", 30, 0.0001, 1, "log");
+        Variables TileExt1 = Variables("Rel. fraction of E in TileExt1", 30, 0.0001, 1, "log");
+        Variables TileExt2 = Variables("Rel. fraction of E in TileExt2", 30, 0.0001, 1, "log");
 
-        Variables FCAL0 = Variables("Rel. fraction of E in FCAL0", 50, 0, 1);
-        Variables FCAL1 = Variables("Rel. fraction of E in FCAL1", 50, 0, 1);
-        Variables FCAL2 = Variables("Rel. fraction of E in FCAL2", 50, 0, 1);
+        Variables FCAL0 = Variables("Rel. fraction of E in FCAL0", 30, 0.0001, 1, "log");
+        Variables FCAL1 = Variables("Rel. fraction of E in FCAL1", 30, 0.0001, 1, "log");
+        Variables FCAL2 = Variables("Rel. fraction of E in FCAL2", 30, 0.0001, 1, "log");
 
 	std::vector<Variables> EnergySamplingVars = {PreSamplerB, EMB1, EMB2, EMB3, PreSamplerE, EME1, EME2, EME3, HEC0, HEC1, HEC2, HEC3,
 	TileBar0, TileBar1, TileBar2, TileGap1, TileGap2, TileGap3, TileExt0, TileExt1, TileExt2, FCAL0, FCAL1, FCAL2};	
@@ -118,7 +118,9 @@ public:
 	void CreateBranchScalar();
 	void BookHistograms();
 	void EventLoop(Long64_t nEntries = 0);
-	void Write(string outfile);
+	void FormTrainingSample(Long64_t nEntries = 0);
+	void CalcRMSE(Float_t jetPtVeto = 0);
+	void Write(string outfile = "");
 };
 
 

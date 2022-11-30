@@ -130,14 +130,14 @@ void Selection::EventLoop(Long64_t nEntries)
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
 				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
-				//if (truth_jet_flavor->at(j) != 21) continue;				
+				if (truth_jet_flavor->at(j) != 21) continue;				
 
 		
 				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_N90->at(j), jet_width->at(j)}; //rucne setupovane
 
 				std::vector<Float_t> energySamplingVars;
 			
-				for (int k = 0; k < EnergySamplingVars.size(); k++) energySamplingVars.push_back(jet_EnergyPerSampling->at(j).at(k));
+				for (unsigned int k = 0; k < EnergySamplingVars.size(); k++) energySamplingVars.push_back(jet_EnergyPerSampling->at(j).at(k));
 				inspectedVars.insert(inspectedVars.end(), energySamplingVars.begin(), energySamplingVars.end());
 				unsigned int varCount = inspectedVars.size();
 				
@@ -145,26 +145,11 @@ void Selection::EventLoop(Long64_t nEntries)
 					std::cout << "Wrong setup of inspected variables - varCount: " << varCount << " but InspectedVars.size()" << InspectedVars.size();
 					exit (EXIT_FAILURE);
 				}
-				// the advantage of this loop is that same vetos are set to training ML sample as to JES/JER source files, thus we can easily see their diffrence
-				if (training_flag && !m_dataType){
-					MC_weight_scalar = MC_weight;
-                    			jet_pt_scalar = jet_pt->at(j);
-                    			jet_eta_scalar = fabs(jet_eta->at(j));
-                    			jet_ntrk_scalar = jet_ntrk->at(j);
-                    			//jet_rtrk_scalar = jet_rtrk->at(j);
-                    			jet_width_scalar = jet_width->at(j);
-					jet_N90_scalar = jet_N90->at(j);
-                    			truth_jet_pt_scalar = truth_jet_pt->at(j);
-   					truth_jet_flavor_scalar = truth_jet_flavor->at(j);	
-				m_treeout->Fill();		
-				}
 
 
-
-				// V ramci optimatimalizace by bylo zajimave se podivat, jestli se tohle vubec deje... prijde mi superfluous
+				// V ramci optimatimalizace by bylo zajimave se podivat, jestli se tohle vubec deje... prijde mi superfluous ---> otestovat postupne v pp in PbPb
 				if (pTr  <= 0 || pTt  <= 0) continue; // matched based distance
 				if (event_Centrality < 0) continue;					
-
 
 				for (unsigned int k = 0; k < varCount; k++){
 					responseCentrVars[event_Centrality][k]->Fill(pTt, pTr/pTt, inspectedVars[k], MC_weight);
@@ -174,6 +159,45 @@ void Selection::EventLoop(Long64_t nEntries)
                 }
      	}
 }
+
+void Selection::FormTrainingSample(Long64_t nEntries)
+{
+        if(!nEntries) nEntries = this->m_nEntries;
+        int statSize = 1;
+        for (Long64_t i=0 ; i<nEntries; i++) {
+                m_tree->GetEntry(i);
+                if(i!=0){
+                        double power=std::floor(log10(i));
+                        statSize=(int)std::pow(10.,power);
+                }
+                if(i%statSize==0) std::cout << "Processing event: " << i << std::endl;
+                Int_t jet_size = truth_jet_pt->size();
+                if (jet_size){
+                        for (int j = 0; j < jet_size; j++){
+                                Float_t pTt = truth_jet_pt->at(j);
+                                Float_t pTr = jet_pt->at(j);
+
+                                // if (pTr  == -999) continue; // mismatching ---> contained in the next ones
+                                if (pTr < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
+
+                                if (training_flag && !m_dataType){
+                                        MC_weight_scalar = MC_weight;
+                                        jet_pt_scalar = jet_pt->at(j);
+                                        jet_eta_scalar = fabs(jet_eta->at(j));
+                                        jet_ntrk_scalar = jet_ntrk->at(j);
+                                        //jet_rtrk_scalar = jet_rtrk->at(j);
+                                        jet_width_scalar = jet_width->at(j);
+                                        jet_N90_scalar = jet_N90->at(j);
+                                        truth_jet_pt_scalar = truth_jet_pt->at(j);
+                                        truth_jet_flavor_scalar = truth_jet_flavor->at(j);
+                                m_treeout->Fill();
+                                }
+			}
+		}
+	}
+}
+
+
 
 void Selection::CalcRMSE(Float_t jetPtVeto) // mismatching automatically solved
 {

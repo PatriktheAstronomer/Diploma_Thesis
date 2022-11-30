@@ -19,15 +19,16 @@ input_ppdata="user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
 
 preselected_PbPbdata = {"PbPb_preselection"}
 #preselected_ppdata = {"pp_inclusive_quark_P8", "pp_gluon_P8"}
-preselected_ppdata = {"P8_quark_u", "P8_quark_d", "P8_quark_s", "P8_quark_c", "P8_quark_b", "P8_gluon"}
+#preselected_ppdata = {"P8_quark_u", "P8_quark_d", "P8_quark_s", "P8_quark_c", "P8_quark_b", "P8_gluon"}
+preselected_ppdata = {"pp_inclusive_quark_P8_log_bins", "pp_gluon_P8_log_bins"}
 
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
-run_number = 10
+run_number = 29112022
 
 doCompile = True # flag variable declaring, which macros should be compiled and which not
-doSelection = True # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
-calculateStats = False # flag specifying whether to do calculate statistical quantities or not
+doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
+calculateStats = True # flag specifying whether to do calculate statistical quantities or not
 doML = False # flag specifying, wherther ML learining and testing should be done
 
 if __name__ == '__main__':
@@ -56,23 +57,21 @@ if __name__ == '__main__':
 		from ROOT import Selection
 		from ROOT import Variables
 		
-
 		"""
                 # FORM SCALAR SAMPLE
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
-		pp_selection.EventLoop()
+		pp_selection.SetBranchAddress()
+		pp_selection.FormTrainingSample()
 		pp_selection.Write()
-		"""		
-
 		"""
+
                 # pp SELECTION
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		pp_selection.SetBranchAddress()
 		pp_selection.BookHistograms()
 		pp_selection.EventLoop()
-		pp_selection.Write(output_folder+"P8_gluon")
-		"""
+		pp_selection.Write(output_folder+"pp_gluon_P8_log_bins")
 
 		"""
 		# pp CALCULATE RMSE
@@ -102,10 +101,10 @@ if __name__ == '__main__':
 	if calculateStats:
 
 # Correlation matrix and JES/JER production
-		GenerateJERS(output_folder, preselected_ppdata, output_folder)
+		#GenerateJERS(output_folder, preselected_ppdata, output_folder)
 		# JES/JER can be produced for more datasamples, corrmatrices only for a certain one
 		#GenerateCorrMatrices(output_folder, preselected_PbPbdata, output_folder)
-		#GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
+		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
 
 
 ### TOHLE NIZ NAS NEZAJIMA ZATIM:
