@@ -61,8 +61,8 @@ public:
 	Variables pT = Variables("pT", 15, 30, 1050, "log");
         Variables response = Variables("response", 99, 0, 2, "uni");
 	Variables eta = Variables("eta", {0.0, 0.3, 0.8, 1.2, 2.1, 2.8, 3.2, 4.5});
-        Variables ntrk = Variables("ntrk", 50, 0, 50, "uni");
-	Variables N90 = Variables ("N90", 15, 0.01, 50.265, "log");
+        Variables ntrk = Variables("ntrk", 20, 0.01, 50, "log");
+	Variables N90 = Variables ("N90", 50, 0.01, 50.265, "uni");
         //Variables sumpTtrk = Variables("SumpTtrk", 100, 0, 1000000000); // ?? proper norm ?? move back to rtrk
 
 	// only trks above 4 GeV used, ghost associated trks

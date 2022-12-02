@@ -279,7 +279,8 @@ def Make3DProjection(h_3F, name, outdir):
 			h_3F.GetXaxis().SetRange(jx,jx)
 			ySlice = h_3F.Project3D("y")
 			zSlice = h_3F.Project3D("z")
-			corr_count_val_pT = zSlice.Integral()/total_jet_count
+			bin_size = (x_bins[jx]-x_bins[jx-1])*(z_bins[jz]-z_bins[jz-1]) # eta is the control region of proper bin_size normalization
+			corr_count_val_pT = zSlice.Integral()/total_jet_count/bin_size
 			corr_count_val.append(corr_count_val_pT)
 			corr_count_per_slice += corr_count_val_pT
 			mu, sigma, emu, esigma = nan, nan, nan, nan		

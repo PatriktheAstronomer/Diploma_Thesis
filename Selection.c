@@ -129,8 +129,8 @@ void Selection::EventLoop(Long64_t nEntries)
 
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
-				if (truth_jet_flavor->at(j) != 21) continue;				
+				if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
+				//if (truth_jet_flavor->at(j) != 21) continue;				
 
 		
 				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_N90->at(j), jet_width->at(j)}; //rucne setupovane
@@ -233,26 +233,34 @@ void Selection::CalcRMSE(Float_t jetPtVeto) // mismatching automatically solved
 
 void Selection::Write(string outName)
 {
-   outName.append(".root");
-   TFile *f_out = new TFile(outName.data(), "RECREATE");
-   for (unsigned int c = 0; c < responseCentrVars.size(); c++){
-	std::string name = "centrality_";
-	name.append(std::to_string(c));
-	f_out->cd();
-	gDirectory->mkdir(name.data());
-	for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
-		f_out->cd(name.data());
-        	responseCentrVars.at(c).at(d)->Write();
-		delete responseCentrVars.at(c).at(d);
+	m_source->Close();
+	if(training_flag && !m_dataType){
+		m_outfile->Write();
+		std::cout << m_outfile->GetName() << " datafile saved" << "\n";
+		m_outfile->Close();
 	}
-   }
-   std::cout << f_out->GetName() << " datafile saved" << "\n";
-   f_out->Close();
-   m_source->Close();
-   if(training_flag && !m_dataType)
-   {
-	m_outfile->Write();
-	std::cout << m_outfile->GetName() << " datafile saved" << "\n";
-	m_outfile->Close();
-   }
+
+	else{
+		outName.append(".root");
+		TFile *f_out = new TFile(outName.data(), "RECREATE");
+		for (unsigned int c = 0; c < responseCentrVars.size(); c++){
+			std::string name = "centrality_";
+			name.append(std::to_string(c));
+			f_out->cd();
+			gDirectory->mkdir(name.data());
+			for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
+				f_out->cd(name.data());
+				responseCentrVars.at(c).at(d)->Write();
+				delete responseCentrVars.at(c).at(d);
+			}
+		}
+		f_out->Close();
+		std::cout << f_out->GetName() << " datafile saved" << "\n";
+	}
+   
+	if(training_flag && !m_dataType){
+		m_outfile->Write();
+		std::cout << m_outfile->GetName() << " datafile saved" << "\n";
+		m_outfile->Close();
+	}
 }

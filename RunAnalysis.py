@@ -11,7 +11,7 @@ from ML_processing import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
-input_ppdata="user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
+input_ppdata = "user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
 
 #"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
 #"user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
@@ -26,7 +26,7 @@ treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 29112022
 
-doCompile = True # flag variable declaring, which macros should be compiled and which not
+doCompile = False # flag variable declaring, which macros should be compiled and which not
 doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
 calculateStats = True # flag specifying whether to do calculate statistical quantities or not
 doML = False # flag specifying, wherther ML learining and testing should be done
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 		pp_selection.SetBranchAddress()
 		pp_selection.BookHistograms()
 		pp_selection.EventLoop()
-		pp_selection.Write(output_folder+"pp_gluon_P8_log_bins")
+		pp_selection.Write(output_folder+"pp_inclusive_quark_P8_log_bins")
 
 		"""
 		# pp CALCULATE RMSE
@@ -107,16 +107,25 @@ if __name__ == '__main__':
 		GenerateCorrMatrices(output_folder, preselected_ppdata, output_folder)	
 
 
-### TOHLE NIZ NAS NEZAJIMA ZATIM:
 # Machine learning part			
-	f.write("Machine learning \n")
-	print("Doing ML learning")
+	if doML:
+		f.write("Machine learning \n")
+		print("Doing ML learning")
+		tree = "training_dataset"
+		source = input_folder + "trainingSampleScalar_29112022.root"
+		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar"]
+		target_branch = "truth_jet_pt_scalar"
 
-	# nejprve napocitat pro kazdy PbPb sample RMSE, pak pro každý sample podle centrality !
+		dataset, target = read_scalar_datafile(source, tree, list_of_input_branches, target_branch)
+
+		outdir = output_folder+"model/"
+		model_training(dataset, target, outdir, "test0")
 
 
-	# pro PbPb data
-	# zavolam si selection::eventloop ovsem tentokrat s argument navic repair_data... if repair_data == true & type == "PbPb", tak budu jedno po druhém data opravovat a plnit příslušné histogramy... na vzniklý data file pak proste už zvaolám klasické metody modulu GenerateCorrMatrices
+
+
+	# pro PbPb data	si zavolam selection::eventloop ovsem tentokrat s argument navic repair_data... if repair_data == true & type == "PbPb", tak budu jedno po druhém data opravovat a plnit příslušné histogramy... na vzniklý data file pak proste už zvaolám klasické metody modulu GenerateCorrMatrices
+	# zadny histogramy, jen plneni noveho filu... co nesplnuje veta, to nechavam
 
 #Correlation test in repaired PbPb data
 	# vyplotim si pres sebe Gaussiany (logaritmicke) oproti raw selekci ---> funkce compare datafiles!
