@@ -11,7 +11,7 @@ from ML_processing import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
-input_ppdata = "user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
+input_ppdata = "user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
 
 #"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
 #"user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
@@ -24,12 +24,13 @@ preselected_ppdata = {"pp_inclusive_quark_P8_log_bins", "pp_gluon_P8_log_bins"}
 
 treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
-run_number = 29112022
+run_number = 7122022
 
 doCompile = False # flag variable declaring, which macros should be compiled and which not
 doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
-calculateStats = True # flag specifying whether to do calculate statistical quantities or not
-doML = False # flag specifying, wherther ML learining and testing should be done
+calculateStats = False # flag specifying whether to do calculate statistical quantities or not
+doML_training = False # flag specifying, whether ML training (on pp samples) should be done
+doML_testing = True # flag specifying, whether ML testing (on PbPb samples) should be done
 
 if __name__ == '__main__':
 #Initialization
@@ -57,7 +58,7 @@ if __name__ == '__main__':
 		from ROOT import Selection
 		from ROOT import Variables
 		
-		"""
+		"""	
                 # FORM SCALAR SAMPLE
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
@@ -66,13 +67,15 @@ if __name__ == '__main__':
 		pp_selection.Write()
 		"""
 
+		"""
                 # pp SELECTION
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		pp_selection.SetBranchAddress()
 		pp_selection.BookHistograms()
 		pp_selection.EventLoop()
 		pp_selection.Write(output_folder+"pp_inclusive_quark_P8_log_bins")
-
+		"""
+	
 		"""
 		# pp CALCULATE RMSE
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
@@ -108,26 +111,27 @@ if __name__ == '__main__':
 
 
 # Machine learning part			
-	if doML:
-		f.write("Machine learning \n")
-		print("Doing ML learning")
+	if doML_training:
+		f.write("Machine training \n")
+		print("Doing ML training")
 		tree = "training_dataset"
-		source = input_folder + "trainingSampleScalar_29112022.root"
+		source = input_folder + "trainingSampleScalar_4122022.root"
+
 		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar"]
 		target_branch = "truth_jet_pt_scalar"
+		dataset, target_regress = read_scalar_datafile(source, tree, list_of_input_branches, target_branch)
 
-		dataset, target = read_scalar_datafile(source, tree, list_of_input_branches, target_branch)
+		list_of_input_branches = []
+		target_branch = "truth_jet_flavor_scalar"
+		_, target_class = read_scalar_datafile(source, tree, list_of_input_branches, target_branch) 
 
 		outdir = output_folder+"model/"
-		model_training(dataset, target, outdir, "test0")
+		model_training(dataset, target_regress, outdir, "test2_regress", "regression")
+
+	if doML_testing:
+		outdir = output_folder+"model/"
+		list_of_input_branches = ["jet_eta", "jet_pt", "jet_ntrk", "jet_N90"]
+		predict(input_folder, input_PbPbdata, "first_prediction.root", treeName, list_of_input_branches, outdir+"test1_regress.model")
 
 
-
-
-	# pro PbPb data	si zavolam selection::eventloop ovsem tentokrat s argument navic repair_data... if repair_data == true & type == "PbPb", tak budu jedno po druhém data opravovat a plnit příslušné histogramy... na vzniklý data file pak proste už zvaolám klasické metody modulu GenerateCorrMatrices
-	# zadny histogramy, jen plneni noveho filu... co nesplnuje veta, to nechavam
-
-#Correlation test in repaired PbPb data
-	# vyplotim si pres sebe Gaussiany (logaritmicke) oproti raw selekci ---> funkce compare datafiles!
-	# porovnavat numericke vysledky pro ruzna run_numbers... Statistika, jak se zlepsuje performance site
-	# ROC curve a integral z nej
+# ROC curve a integral z nej -> zajimave pro klasifikaci

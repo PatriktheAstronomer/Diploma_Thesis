@@ -162,6 +162,7 @@ void Selection::EventLoop(Long64_t nEntries)
 
 void Selection::FormTrainingSample(Long64_t nEntries)
 {
+	int debug_counter = 0;
         if(!nEntries) nEntries = this->m_nEntries;
         int statSize = 1;
         for (Long64_t i=0 ; i<nEntries; i++) {
@@ -181,7 +182,8 @@ void Selection::FormTrainingSample(Long64_t nEntries)
                                 if (pTr < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
 
                                 if (training_flag && !m_dataType){
-                                        MC_weight_scalar = MC_weight;
+					debug_counter++;
+					MC_weight_scalar = MC_weight;
                                         jet_pt_scalar = jet_pt->at(j);
                                         jet_eta_scalar = fabs(jet_eta->at(j));
                                         jet_ntrk_scalar = jet_ntrk->at(j);
@@ -195,6 +197,7 @@ void Selection::FormTrainingSample(Long64_t nEntries)
 			}
 		}
 	}
+	std::cout << "number of scalar inputs written: "<< debug_counter << std::endl;
 }
 
 
@@ -256,11 +259,5 @@ void Selection::Write(string outName)
 		}
 		f_out->Close();
 		std::cout << f_out->GetName() << " datafile saved" << "\n";
-	}
-   
-	if(training_flag && !m_dataType){
-		m_outfile->Write();
-		std::cout << m_outfile->GetName() << " datafile saved" << "\n";
-		m_outfile->Close();
 	}
 }
