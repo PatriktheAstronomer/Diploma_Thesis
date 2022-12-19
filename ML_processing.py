@@ -1,8 +1,8 @@
 import numpy as np
+import awkward as ak
 import uproot
 import lzma
 import os
-import shutil
 import pickle
 import sys
 
@@ -38,6 +38,8 @@ def model_training(dataset, target, outdir, model_name, type):
 	elif type == "classification":
 		pass
 
+        # Zkusit histogramovane GBDT
+
 	with lzma.open(outdir+model_name+".model", "wb") as model_file:
 		pickle.dump(model, model_file)
 
@@ -45,36 +47,33 @@ def model_training(dataset, target, outdir, model_name, type):
 	# sestavit model, zjednodusit vahy (asi neni nutne, dokud neni obludne velky), ulozit ho
 
 	#musit to delat uz nacisto, tedy nacist si tady data a nacvicit nejaky model a ulozit ho -> MLP z week 4, BDT z week 10, na classifikaci kNN
-	# pomoci splitu budu nejprve cvicit na velmi malych samplech... treba 1/1000, celych dat, pak na vetsich celcich
+	# pomoci splitu budu nejprve cvicit na velmi malych samplech... treba 1/1000, celych dat, pak na vetsich celcich---> U toho všeho jde porovnavat accuracy i RMSE
 
-def predict(dir, source, outname, tree, list_of_input_branches, model_address):
+
+def predict(dir, source, in_tree, out_tree_number, list_of_input_branches, model_address):
 	# works the same for regressors and classifier and any model in general
 	with lzma.open(model_address, "rb") as model_file:
 		model = pickle.load(model_file)
         
-	shutil.copyfile(dir+source, dir+outname)
-	events = uproot.open(dir+source+":"+tree) #input tree for reading
+	file = uproot.update(dir+source) #input file for reading
+	read_tree = uproot[in_tree]
+	file["model_"+str(out_tree_number)] = ({"corr_jet_pt": ak.contents.EmptyArray()})   # later we can also try to correct dubblet (pt, eta)
 
-	for batch in events.iterate(step_size="200 kB", filter_name = list_of_input_branches, library = "pd"):
+	for batch in events.iterate(step_size="200 kB", filter_name = list_of_input_branches, library = "pd"): #optimalizovat step_size postupně, brat jako np, pd se jen dobře čte
 		print(len(batch.T))
 		predictions = []
-		for j in range(len(batch)): # batch is a group of j-matricies of i-jets time d-features 
-			"""
-			print(len(batch.T))
+		for j in range(len(batch)): # batch is a group of j-matricies of i-jets time d-features
 			event_predictions = []
-			fol l in range(len(batch[1][j])):
-				if batch[1][j][l] > 30: # place here later 0 GeV; eta is always the first one, pT the second one
+			for l in range(len(batch[1][j])): # eta is always the first one, pT the second one
+				if batch[1][j][l] > 30: # place here later 0 GeV ?
 					prediction = model.predict(batch[0][j][l], batch[1][j][l], batch[2][j][l], batch[3][j][l]) #set better here, later on
-					event_predictions.append(prediction)	                
-
-	        		else:
-					predictions.append(dato[1][j][l]) // keep the same pT
+					event_predictions.append(prediction)
+				else:
+					predictions.append(dato[1][j][l]) # keep the same pT
 			predictions.append(event_predictions)
 
 			print(batch[1][j], "original")
 			print(event_predictions, "repaired")
-			"""
 		
-
-	# Selection::WriteInVal(prediction) // https://root.cern.ch/root/roottalk/roottalk01/0363.html vs. https://indico.cern.ch/event/840667/contributions/3527109/attachments/1908764/3153297/uproot-irisfellow-final.pdf
-	# POTŘEBUJU VSTUPNI FILY VYCISTIT, ABYCH DO MODEL.PREDICT MOHL CPAT KRASNE matici features x jets z jednoho eventu...
+		# printovat informace o batcich	
+		file["model_"+str(out_tree_number)].extend({"corr_jet_pt": ak.Array(predictions)})

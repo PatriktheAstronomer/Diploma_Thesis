@@ -34,7 +34,6 @@ public:
 	double MC_weight_scalar;
 	std::vector<Float_t> * jet_eta = 0;
 	std::vector<Float_t> * jet_pt = 0;
-	//std::vector<Float_t> * jet_rtrk = 0;
 	std::vector<Float_t> * jet_ntrk = 0;
 	std::vector<Float_t> * jet_width = 0;
 	std::vector<std::vector<Float_t>> *  jet_EnergyPerSampling = 0;
