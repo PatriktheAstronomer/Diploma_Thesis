@@ -10,56 +10,87 @@ Selection::Selection(TString source, TString treeName, TString type)
 
 void Selection::SetDataType(TString type)
 {
-  if(type == "pp"){
-	m_dataType = 0;
-	m_centralityBinsN = 1;
-  }
-  else if(type =="PbPb"){
-	m_dataType = 1;
-	m_centralityBinsN = 8;
-  }
-  else{
-	std::cout << "Unknow data type inserted\n";
-  }
+	if(type == "pp"){
+		m_dataType = 0;
+		m_centralityBinsN = 1;
+	}
+
+	else if(type =="PbPb"){
+		m_dataType = 1;
+		m_centralityBinsN = 8;
+	}
+
+  	else{
+		std::cout << "Unknow data type inserted\n";
+	}
 }
 
 void Selection::SetSource(TString source)
 {
-  m_source = new TFile(source);
+	m_source = new TFile(source);
 }
 
 void Selection::SetTreeName(TString treeName)
 {
-  m_treeName = treeName;
+	m_treeName = treeName;
 }
 
 void Selection::GetTTree()
 {
- m_tree = (TTree*)m_source->Get(m_treeName);
- m_nEntries = m_tree->GetEntries();
+	m_tree = (TTree*)m_source->Get(m_treeName);
+	m_nEntries = m_tree->GetEntries();
 }
 
 void Selection::FormScalarSample(TString outname)
 {
- m_outfile = new TFile(outname, "recreate");
- m_treeout = new TTree("training_dataset", "");
- CreateBranchScalar();
- training_flag = true;
+	m_outfile = new TFile(outname, "recreate");
+	m_treeout = new TTree("training_dataset", "");
+	CreateBranchScalar();
+	training_flag = true;
 }
 
-void Selection::SetBranchAddress()
+void Selection::SetBranchAddress(list_of_branches_to_activate)
 {
-   m_tree->SetBranchAddress("MC_weight",&MC_weight);
-   m_tree->SetBranchAddress("jet_eta",&jet_eta);
-   m_tree->SetBranchAddress("jet_pt",&jet_pt);
-   m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
-   //m_tree->SetBranchAddress("jet_SumPtTrk",&jet_SumPtTrk);
-   m_tree->SetBranchAddress("jet_width",&jet_width);
-   m_tree->SetBranchAddress("jet_N90", &jet_N90);
-   m_tree->SetBranchAddress("jet_EnergyPerSampling", &jet_EnergyPerSampling);
-   m_tree->SetBranchAddress("truth_jet_pt",&truth_jet_pt);
-   m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
-   m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
+	for (auto branch in list_of_branches_to_activate){
+		switch(branch){
+			case "MC_weight":
+				m_tree->SetBranchAddress("MC_weight",&MC_weight);
+   				break;
+			case "jet_eta":
+				m_tree->SetBranchAddress("jet_eta",&jet_eta);
+   				break;
+			case "jet_pt":
+				m_tree->SetBranchAddress("jet_pt",&jet_pt);
+				break;   	
+			case "jet_ntrk":
+				m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
+   				break;
+			case "jet_SumPtTrk": // pregenerovat casem i zakladni vstupni file, abych si vytvoril rtrk
+				m_tree->SetBranchAddress("jet_SumPtTrk",&jet_SumPtTrk);
+				break;   	
+			case "jet_width:
+				m_tree->SetBranchAddress("jet_width",&jet_width);
+   				break;
+			case "jet_N90":
+				m_tree->SetBranchAddress("jet_N90", &jet_N90);
+   				break;
+			case "jet_EnergyPerSampling":
+				m_tree->SetBranchAddress("jet_EnergyPerSampling", &jet_EnergyPerSampling);
+   				break;
+			case "corr_jet_pt":
+				m_tree->SetBranchAddress("corr_jet_pt", &corr_jet_pt);
+   				break;
+			case "truth_jet_pt":
+				m_tree->SetBranchAddress("truth_jet_pt",&truth_jet_pt);
+				break;
+			case "truth_jet_flavor":
+   				m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
+				break;   	
+			case "event_Centrality":
+				m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
+   				break;
+		}
+	}
 }
 
 void Selection::CreateBranchScalar()
@@ -70,14 +101,15 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("jet_eta_scalar", &jet_eta_scalar, "float");
    m_treeout->Branch("jet_pt_scalar", &jet_pt_scalar, "float");
    m_treeout->Branch("jet_ntrk_scalar", &jet_ntrk_scalar, "float");
-   //m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float"); 
+   m_treeout->Branch("jet_rtrk_scalar", &jet_rtrk_scalar, "float"); 
    m_treeout->Branch("jet_width_scalar", &jet_width_scalar, "float");
    m_treeout->Branch("jet_N90_scalar", &jet_N90_scalar, "float");
    m_treeout->Branch("truth_jet_pt_scalar", &truth_jet_pt_scalar, "float");
+   m_treeout->Branch("jet_response_scalar", &jet_response_scalar, "float");
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
 // used in the scalar generator process
 
-// create here calo variables !!!
+// create here calo variables !!! ---> ? nejspis nakonec jen dva layery, mozna aplikovat jako vyse
 
 }
 
@@ -129,7 +161,7 @@ void Selection::EventLoop(Long64_t nEntries)
 
 				// jet flavor selection - d, u, s, c, b & g -> 1, 2, 3, 4, 5 a 21
 				// placed in the name of datasample
-				if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
+				//if (truth_jet_flavor->at(j) < 1 || truth_jet_flavor->at(j) > 5) continue;
 				//if (truth_jet_flavor->at(j) != 21) continue;				
 
 		
@@ -187,9 +219,10 @@ void Selection::FormTrainingSample(Long64_t nEntries)
                                         jet_pt_scalar = jet_pt->at(j);
                                         jet_eta_scalar = fabs(jet_eta->at(j));
                                         jet_ntrk_scalar = jet_ntrk->at(j);
-                                        //jet_rtrk_scalar = jet_rtrk->at(j);
+                                        jet_rtrk_scalar = jet_SumPtTrk->at(j)/jet_pt->at(j);
                                         jet_width_scalar = jet_width->at(j);
                                         jet_N90_scalar = jet_N90->at(j);
+					jet_response_scalar = jet_pt->at(j)/truth_jet_pt->at(j);
                                         truth_jet_pt_scalar = truth_jet_pt->at(j);
                                         truth_jet_flavor_scalar = truth_jet_flavor->at(j);
                                 m_treeout->Fill();
@@ -202,34 +235,61 @@ void Selection::FormTrainingSample(Long64_t nEntries)
 
 
 
-void Selection::CalcRMSE(Float_t jetPtVeto) // mismatching automatically solved
+void Selection::CalcRMSE(Float_t jetPtVeto, corrected_file = False) // mismatching solved by pT veto
 {
+	// if file is corrected, we calculate metrics and work with corr_jet_pt in RMSE calculations instead of truth_jet_pt
         int statSize = 1;
 	std::vector<Int_t> number_of_records(m_centralityBinsN, 0);
 	std::vector<Float_t> error_vec(m_centralityBinsN, 0);
-        for (Long64_t i=0 ; i<m_nEntries; i++) {
-                m_tree->GetEntry(i);
-                if(i!=0){
-                        double power=std::floor(log10(i));
-                        statSize=(int)std::pow(10.,power);
+	
+	if (corrected_file){
+	        Float_t improved_count;
+		Float_t worsen_count;
+                for (Long64_t i=0 ; i<m_nEntries; i++){
+                        m_tree->GetEntry(i);
+                        if (i != 0){
+                                double power=std::floor(log10(i));
+                                statSize=(int)std::pow(10.,power);
+                        }
+                        if (i%statSize==0) std::cout << "Processing event: " << i << std::endl;
+                        Int_t jet_size = truth_jet_pt->size();
+                        if (jet_size){
+                                for (int j = 0; j < jet_size; j++){
+                                        if (corr_jet_pt->at(j) < jetPtVeto) continue; // pT veto for given statistics to be described
+                                        error_vec[event_Centrality] += (corr_jet_pt->at(j)-truth_jet_pt->at(j))*(corr_jet_pt->at(j)-truth_jet_pt->at(j));
+                                        number_of_records[event_Centrality]++;
+					if abs(corr_jet_pt->at(j) - truth_jet_pt->at(j)) <= abs(jet_pt->at(j) - truth_jet_pt->at(j))) improved_count++;
+					else worsen_count++;
+				}
+                        }
                 }
-                if(i%statSize==0) std::cout << "Processing event: " << i << std::endl;
-                Int_t jet_size = truth_jet_pt->size();
-                if (jet_size){
-                        for (int j = 0; j < jet_size; j++){
-                                if (jet_pt->at(j) < jetPtVeto) continue; // pT veto for given statistics to be described
-				error_vec[event_Centrality] += (jet_pt->at(j)-truth_jet_pt->at(j))*(jet_pt->at(j)-truth_jet_pt->at(j));
-				number_of_records[event_Centrality]++;
+        	std::cout.precision(5);
+		std::cout << "Improvement ratio is  " << improved_count/worsen_count << std::endl;
+	}
+	else{
+        	for (Long64_t i=0 ; i<m_nEntries; i++){
+                	m_tree->GetEntry(i);
+                	if (i != 0){
+                        	double power=std::floor(log10(i));
+                        	statSize=(int)std::pow(10.,power);
+                	}
+                	if (i%statSize==0) std::cout << "Processing event: " << i << std::endl;
+                	Int_t jet_size = truth_jet_pt->size();
+                	if (jet_size){
+                        	for (int j = 0; j < jet_size; j++){
+                                	if (jet_pt->at(j) < jetPtVeto) continue; // pT veto for given statistics to be described
+					error_vec[event_Centrality] += (jet_pt->at(j)-truth_jet_pt->at(j))*(jet_pt->at(j)-truth_jet_pt->at(j));
+					number_of_records[event_Centrality]++;
+				}
 			}
 		}
 	}
 
-
+	std::cout.precision(5);
 	for (int c=0; c < m_centralityBinsN; c++) {
-		std::cout.precision(5);
 		std::cout << "Centrality " << c << " has RMSE " << sqrt(error_vec[c]/number_of_records[c]) << std::endl;
 	}
-
+	std::cout << "Overall centrality is " << sqrt(std::accumulate(error_vec.begin(), error_vec.end(), 0.0)/std::accumulate(number_of_records.begin(), number_of_records.end(), 0))
 
 }
 

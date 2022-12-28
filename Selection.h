@@ -14,6 +14,8 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <numeric>
+
 
 #include "Variables.h"
 
@@ -36,6 +38,7 @@ public:
 	std::vector<Float_t> * jet_pt = 0;
 	std::vector<Float_t> * jet_ntrk = 0;
 	std::vector<Float_t> * jet_width = 0;
+	std::vector<Float_t> * jet_SumPtTrk = 0;
 	std::vector<std::vector<Float_t>> *  jet_EnergyPerSampling = 0;
 	std::vector<Float_t> * jet_N90 = 0;
 	std::vector<Float_t> * truth_jet_pt = 0;
@@ -46,6 +49,7 @@ public:
         Float_t jet_ntrk_scalar;
         Float_t jet_width_scalar;
 	Float_t jet_N90_scalar;
+	Float_t jet_response_scalar;
 	Float_t truth_jet_pt_scalar;
         Int_t truth_jet_flavor_scalar;
 

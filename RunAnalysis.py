@@ -11,7 +11,7 @@ from ML_processing import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
-input_ppdata = "user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
+input_ppdata = "user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
 
 #"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
 #"user.mrybar.pp_MC_H7_ForPatrik_r004_deriv_ANALYSIS.root"
@@ -58,14 +58,14 @@ if __name__ == '__main__':
 		from ROOT import Selection
 		from ROOT import Variables
 		
-		"""	
+			
                 # FORM SCALAR SAMPLE
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
-		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/trainingSampleScalar_"+str(run_number)+".root")
+		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/Py_train.root")
 		pp_selection.SetBranchAddress()
 		pp_selection.FormTrainingSample()
 		pp_selection.Write()
-		"""
+		
 
 		"""
                 # pp SELECTION
@@ -115,10 +115,10 @@ if __name__ == '__main__':
 		f.write("Machine training \n")
 		print("Doing ML training")
 		tree = "training_dataset"
-		source = input_folder + "trainingSampleScalar_4122022.root"
+		source = input_folder + "HyPe_train.root"  #"trainingSampleScalar_4122022.root"
 
-		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar"]
-		target_branch = "truth_jet_pt_scalar"
+		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar", "jet_rtrk_scalar"]
+		target_branch = "jet_response_scalar" #"truth_jet_pt_scalar"
 		dataset, target_regress = read_scalar_datafile(source, tree, list_of_input_branches, target_branch)
 
 		list_of_input_branches = []
@@ -126,12 +126,14 @@ if __name__ == '__main__':
 		_, target_class = read_scalar_datafile(source, tree, list_of_input_branches, target_branch) 
 
 		outdir = output_folder+"model/"
-		model_training(dataset, target_regress, outdir, "test2_regress", "regression")
+		model_training(dataset, target_regress, outdir, "GBDT_4", "regressor")
 
 	if doML_testing:
 		outdir = output_folder+"model/"
+		input_PbPbdata = "PbPb_cleaned.root"
 		list_of_input_branches = ["jet_eta", "jet_pt", "jet_ntrk", "jet_N90"]
-		predict(input_folder, input_PbPbdata, "first_prediction.root", treeName, list_of_input_branches, outdir+"test1_regress.model")
+		predict(input_folder, input_PbPbdata,  outdir, "GBDT_3", list_of_input_branches, "regressor")
 
 
-# ROC curve a integral z nej -> zajimave pro klasifikaci
+
+# ROC curve a integral z nej -> zajimave pro klasifikaci ?
