@@ -54,31 +54,32 @@ def predict(dir, source, outdir, model_name, list_of_input_branches, model_type)
 		model = pickle.load(model_file)
         
 	events = uproot.open(dir+source+":"+"AntiKt4HI") #input tree for reading
-	outfile = uproot.recreate(outdir+model_name+".root")
 
 	if model_type == "regressor":
 		val_name = "corr_jet_pt"
 	elif model_type == "classifier": #first we will work only with regressors
 		val_name = "pred_jet_flavour"
 
-	for batch, report in events.iterate(step_size="1 MB", filter_name = list_of_input_branches, library = "np", report = True):
-		print(report)
-		batch = np.array([batch[branch] for branch in list_of_input_branches]).T
+	with uproot.recreate(outdir+"/"+model_name+".root") as outfile:
+		for batch, report in events.iterate(step_size="10 MB", filter_name = list_of_input_branches, library = "np", report = True):
+			print(report)
+			batch = np.array([batch[branch] for branch in list_of_input_branches]).T
+			batch_prediction = np.array([])
+			for e in range(len(batch)): # batch is a group of j-matricies of i-jets time d-features -> loop event in events
+				event_data = []
+				for feature in range(len(list_of_input_branches)):
+					event_data.append(batch[e][feature])
+				event_data = np.array(event_data)
+				try:
+					event_prediction = event_data[1]/model.predict(event_data.T) #differs for GBDT and MLP, pT cut in training set
+				except:
+					event_prediction = event_data[1]
 
-		for e in range(len(batch)): # batch is a group of j-matricies of i-jets time d-features -> loop event in events
-			event_data = []
-			for feature in range(len(list_of_input_branches)):
-				event_data.append(batch[e][feature])
-			event_data = np.array(event_data)
+				batch_prediction = np.append(batch_prediction, event_prediction)
 			try:
-				event_prediction = event_data[1]/model.predict(event_data.T) #differs for GBDT and MLP, pT cut in training set
+				outfile["AntiKt4HI"].extend({val_name: ak.Array(batch_prediction)})
 			except:
-				event_prediction = event_data[1]
-			
-			try:
-				outfile["AntiKt4HI"].extend({val_name: ak.Array(event_prediction)})
-			except:
-				outfile["AntiKt4HI"] = ({val_name: ak.Array(event_prediction)})      # later we can also try to correct dubblet (pt, eta)
+				outfile["AntiKt4HI"] = ({val_name: ak.Array(batch_prediction)})      # later we can also try to correct dubblet (pt, eta)
 
 def create_final_file(source, list_of_input_branches_to_copy, model_name, model_type):
 	pass # nutnost vzit cisty file a prekopirovat do nej predikci, plus stare vetve a to do jednoho stromu, aby se mi to snadno davalo do testovani...
