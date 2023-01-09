@@ -3,6 +3,7 @@ import ROOT
 from ROOT import TFile
 import math
 from math import *
+import sklearn
 import uproot
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,8 +30,8 @@ run_number = 7122022
 doCompile = False # flag variable declaring, which macros should be compiled and which not
 doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
 calculateStats = False # flag specifying whether to do calculate statistical quantities or not
-doML_training = False # flag specifying, whether ML training (on pp samples) should be done
-doML_testing = True # flag specifying, whether ML testing (on PbPb samples) should be done
+doML_training = True # flag specifying, whether ML training (on pp samples) should be done
+doML_testing = False # flag specifying, whether ML testing (on PbPb samples) should be done
 
 if __name__ == '__main__':
 #Initialization
@@ -117,23 +118,21 @@ if __name__ == '__main__':
 		tree = "training_dataset"
 		source = input_folder + "HyPe_train.root"  #"trainingSampleScalar_4122022.root"
 
-		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar", "jet_rtrk_scalar"]
-		target_branch = "jet_response_scalar" #"truth_jet_pt_scalar"
-		dataset, target_regress = read_scalar_datafile(source, tree, list_of_input_branches, target_branch)
+		list_of_input_branches = ["jet_eta_scalar", "jet_pt_scalar", "jet_ntrk_scalar", "jet_N90_scalar"] #, "jet_rtrk_scalar"]
+		target_branch = "jet_response_scalar" # "truth_jet_pt_scalar"
+		dataset, target_regress, mc_weights = read_scalar_datafile(source, tree, list_of_input_branches, target_branch, True)
 
 		list_of_input_branches = []
 		target_branch = "truth_jet_flavor_scalar"
-		_, target_class = read_scalar_datafile(source, tree, list_of_input_branches, target_branch) 
+		_, target_class, _ = read_scalar_datafile(source, tree, list_of_input_branches, target_branch) 
 
 		outdir = output_folder+"model/"
-		model_training(dataset, target_regress, outdir, "GBDT_4", "regressor")
+		model_training(dataset, target_regress, mc_weights, outdir, "HIST_0", "regressor")
 
 	if doML_testing:
 		outdir = output_folder+"model/"
 		input_PbPbdata = "PbPb_cleaned.root"
 		list_of_input_branches = ["jet_eta", "jet_pt", "jet_ntrk", "jet_N90"]
-		predict(input_folder, input_PbPbdata,  outdir, "GBDT_3", list_of_input_branches, "regressor")
-
-
+		predict(input_folder, input_PbPbdata,  outdir, "alpha_regress", list_of_input_branches, "regressor")
 
 # ROC curve a integral z nej -> zajimave pro klasifikaci ?
