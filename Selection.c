@@ -344,8 +344,8 @@ void Selection::CalcRMSE(Float_t jetPtVeto, bool corrected_file) // mismatching 
 
 void Selection::Write(string outName)
 {
-	m_source->Close();
 	if(training_flag && !m_dataType){
+		std::cout << "pp training dataset processed" << "\n";
 		m_outfile->Write();
 		std::cout << m_outfile->GetName() << " datafile saved" << "\n";
 		m_outfile->Close();
@@ -361,11 +361,12 @@ void Selection::Write(string outName)
 			gDirectory->mkdir(name.data());
 			for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
 				f_out->cd(name.data());
-				responseCentrVars[c][d]->Write();
+				responseCentrVars.at(c).at(d)->Write();
 				delete responseCentrVars.at(c).at(d);
 			}
 		}
 		f_out->Close();
 		std::cout << f_out->GetName() << " datafile saved" << "\n";
 	}
+	m_source->Close();
 }
