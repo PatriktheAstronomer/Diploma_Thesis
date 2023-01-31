@@ -49,8 +49,9 @@ void Selection::FormScalarSample(TString outname)
 	training_flag = true;
 }
 
-void Selection::SetBranchAddress(list_of_branches_to_activate)
+void Selection::SetBranchAddress(std::vector<TString> list_of_branches_to_activate)
 {
+	/*
 	for (auto branch in list_of_branches_to_activate){
 		switch(branch){
 			case "MC_weight":
@@ -91,6 +92,19 @@ void Selection::SetBranchAddress(list_of_branches_to_activate)
    				break;
 		}
 	}
+	*/
+        m_tree->SetBranchAddress("MC_weight",&MC_weight);
+        m_tree->SetBranchAddress("jet_eta",&jet_eta);
+        m_tree->SetBranchAddress("jet_pt",&jet_pt);
+        m_tree->SetBranchAddress("jet_ntrk",&jet_ntrk);
+        m_tree->SetBranchAddress("jet_SumPtTrk",&jet_SumPtTrk);
+        m_tree->SetBranchAddress("jet_width",&jet_width);
+        m_tree->SetBranchAddress("jet_N90", &jet_N90);
+        m_tree->SetBranchAddress("jet_EnergyPerSampling", &jet_EnergyPerSampling);
+	//m_tree->SetBranchAddress("corr_jet_pt", &corr_jet_pt); ---> odstranit
+	m_tree->SetBranchAddress("truth_jet_pt",&truth_jet_pt);
+        m_tree->SetBranchAddress("truth_jet_flavor",&truth_jet_flavor);
+        m_tree->SetBranchAddress("event_Centrality",&event_Centrality);
 }
 
 void Selection::CreateBranchScalar()
@@ -108,9 +122,19 @@ void Selection::CreateBranchScalar()
    m_treeout->Branch("jet_response_scalar", &jet_response_scalar, "float");
    m_treeout->Branch("truth_jet_flavor_scalar", &truth_jet_flavor_scalar, "float");
 // used in the scalar generator process
+   
+   // extended_1
+   m_treeout->Branch("jet_peta_scalar", &jet_peta_scalar, "float");
 
-// create here calo variables !!! ---> ? nejspis nakonec jen dva layery, mozna aplikovat jako vyse
-
+   // geo_extension
+   m_treeout->Branch("jet_EMB_fraction", &jet_EMB_fraction, "float");
+   m_treeout->Branch("jet_EME_fraction", &jet_EME_fraction, "float");
+   m_treeout->Branch("jet_HEC_fraction", &jet_HEC_fraction, "float");
+   m_treeout->Branch("jet_TILE_fraction", &jet_TILE_fraction, "float");
+   m_treeout->Branch("jet_FCAL_fraction", &jet_FCAL_fraction, "float");
+   // geo_extension_2
+   m_treeout->Branch("jet_TILE_BAR_fraction", &jet_TILE_BAR_fraction, "float");
+   m_treeout->Branch("jet_TILE_EXTENDED_fraction", &jet_TILE_EXTENDED_fraction, "float");
 }
 
 void Selection::BookHistograms()
@@ -151,7 +175,7 @@ void Selection::EventLoop(Long64_t nEntries)
 		if(i%statSize==0) std::cout << "Processing event: " << i << std::endl;
         	Int_t jet_size = truth_jet_pt->size();
         	if (jet_size){
-                	for (int j = 0; j < jet_size; j++){					
+                	for (int j = 0; j < jet_size; j++){
                                 Float_t pTt = truth_jet_pt->at(j);
                                 Float_t pTr = jet_pt->at(j);
 
@@ -167,16 +191,12 @@ void Selection::EventLoop(Long64_t nEntries)
 		
 				std::vector<Float_t> inspectedVars = {jet_eta->at(j), jet_ntrk->at(j), jet_N90->at(j), jet_width->at(j)}; //rucne setupovane
 
+// temporal -> till we start to handle calo values per partes
 				std::vector<Float_t> energySamplingVars;
 			
 				for (unsigned int k = 0; k < EnergySamplingVars.size(); k++) energySamplingVars.push_back(jet_EnergyPerSampling->at(j).at(k));
 				inspectedVars.insert(inspectedVars.end(), energySamplingVars.begin(), energySamplingVars.end());
 				unsigned int varCount = inspectedVars.size();
-				
-				if (InspectedVars.size() != varCount){
-					std::cout << "Wrong setup of inspected variables - varCount: " << varCount << " but InspectedVars.size()" << InspectedVars.size();
-					exit (EXIT_FAILURE);
-				}
 
 
 				// V ramci optimatimalizace by bylo zajimave se podivat, jestli se tohle vubec deje... prijde mi superfluous ---> otestovat postupne v pp in PbPb
@@ -211,20 +231,49 @@ void Selection::FormTrainingSample(Long64_t nEntries)
                                 Float_t pTr = jet_pt->at(j);
 
                                 // if (pTr  == -999) continue; // mismatching ---> contained in the next ones
-                                if (pTr < 20 && m_dataType == 0) continue; // ! pT veto per jet in pp
+                                if (pTr <= 0) continue; // ! pT veto per jet in pp
+				if (truth_jet_flavor->at(j) < 1) continue;
 
                                 if (training_flag && !m_dataType){
 					debug_counter++;
 					MC_weight_scalar = MC_weight;
                                         jet_pt_scalar = jet_pt->at(j);
-                                        jet_eta_scalar = fabs(jet_eta->at(j));
+                                        jet_eta_scalar = abs(jet_eta->at(j));
                                         jet_ntrk_scalar = jet_ntrk->at(j);
-                                        jet_rtrk_scalar = jet_SumPtTrk->at(j)/jet_pt->at(j);
+                                        jet_rtrk_scalar = jet_SumPtTrk->at(j)/jet_pt->at(j)/1000; //MeV to GeV
                                         jet_width_scalar = jet_width->at(j);
                                         jet_N90_scalar = jet_N90->at(j);
-					jet_response_scalar = jet_pt->at(j)/truth_jet_pt->at(j);
+					jet_response_scalar = jet_pt->at(j)/truth_jet_pt->at(j); //binned later variously before used for classification-based regression
                                         truth_jet_pt_scalar = truth_jet_pt->at(j);
-                                        truth_jet_flavor_scalar = truth_jet_flavor->at(j);
+
+					// extension 1
+					jet_peta_scalar = jet_pt->at(j) * jet_eta->at(j);
+
+					//filing pro binary
+					if (truth_jet_flavor->at(j) == 21){
+						truth_jet_flavor_scalar = -1; // gluon
+					}
+					else{
+						truth_jet_flavor_scalar	= 1; // kvark 
+					}
+                                        //truth_jet_flavor_scalar = truth_jet_flavor->at(j);
+
+					// geo extension
+					std::vector<Float_t> energies = jet_EnergyPerSampling->at(j);
+					jet_EMB_fraction = jet_EME_fraction = jet_HEC_fraction = jet_TILE_fraction = jet_FCAL_fraction = 0;
+				
+					for (int i = 0; i < 4; i++){
+						jet_EMB_fraction += energies.at(i);
+						jet_EME_fraction += energies.at(4+i);
+						jet_HEC_fraction += energies.at(8+i);
+					}
+					for (int i = 12; i < 21; i++) jet_TILE_fraction += energies.at(i);
+					for (int i = 21; i < 24; i++) jet_FCAL_fraction += energies.at(i);
+					// geo extension 2
+					jet_TILE_BAR_fraction = jet_TILE_EXTENDED_fraction = 0;
+					for (int i = 12; i < 16; i++) jet_TILE_BAR_fraction += energies.at(i);
+                                        for (int i = 20; i < 24; i++) jet_TILE_EXTENDED_fraction += energies.at(i);
+
                                 m_treeout->Fill();
                                 }
 			}
@@ -235,13 +284,13 @@ void Selection::FormTrainingSample(Long64_t nEntries)
 
 
 
-void Selection::CalcRMSE(Float_t jetPtVeto, corrected_file = False) // mismatching solved by pT veto
+void Selection::CalcRMSE(Float_t jetPtVeto, bool corrected_file) // mismatching solved by pT veto
 {
 	// if file is corrected, we calculate metrics and work with corr_jet_pt in RMSE calculations instead of truth_jet_pt
         int statSize = 1;
 	std::vector<Int_t> number_of_records(m_centralityBinsN, 0);
 	std::vector<Float_t> error_vec(m_centralityBinsN, 0);
-	
+
 	if (corrected_file){
 	        Float_t improved_count;
 		Float_t worsen_count;
@@ -258,7 +307,7 @@ void Selection::CalcRMSE(Float_t jetPtVeto, corrected_file = False) // mismatchi
                                         if (corr_jet_pt->at(j) < jetPtVeto) continue; // pT veto for given statistics to be described
                                         error_vec[event_Centrality] += (corr_jet_pt->at(j)-truth_jet_pt->at(j))*(corr_jet_pt->at(j)-truth_jet_pt->at(j));
                                         number_of_records[event_Centrality]++;
-					if abs(corr_jet_pt->at(j) - truth_jet_pt->at(j)) <= abs(jet_pt->at(j) - truth_jet_pt->at(j))) improved_count++;
+					if (abs(corr_jet_pt->at(j) - truth_jet_pt->at(j)) <= abs(jet_pt->at(j) - truth_jet_pt->at(j))) improved_count++;
 					else worsen_count++;
 				}
                         }
@@ -284,12 +333,11 @@ void Selection::CalcRMSE(Float_t jetPtVeto, corrected_file = False) // mismatchi
 			}
 		}
 	}
-
 	std::cout.precision(5);
 	for (int c=0; c < m_centralityBinsN; c++) {
 		std::cout << "Centrality " << c << " has RMSE " << sqrt(error_vec[c]/number_of_records[c]) << std::endl;
 	}
-	std::cout << "Overall centrality is " << sqrt(std::accumulate(error_vec.begin(), error_vec.end(), 0.0)/std::accumulate(number_of_records.begin(), number_of_records.end(), 0))
+	std::cout << "Overall centrality is " << sqrt(std::accumulate(error_vec.begin(), error_vec.end(), 0.0)/std::accumulate(number_of_records.begin(), number_of_records.end(), 0));
 
 }
 
@@ -313,7 +361,7 @@ void Selection::Write(string outName)
 			gDirectory->mkdir(name.data());
 			for (unsigned int d = 0; d < responseCentrVars.at(c).size(); d++){
 				f_out->cd(name.data());
-				responseCentrVars.at(c).at(d)->Write();
+				responseCentrVars[c][d]->Write();
 				delete responseCentrVars.at(c).at(d);
 			}
 		}

@@ -12,6 +12,10 @@ from ML_processing import *
 
 input_folder = "/mnt/scratch1/novotnyp/data/"
 input_PbPbdata = "user.mrybar.PbPb_MC_ForPatrik_r004_ANALYSIS.root"
+
+#input_PbPbdata = "PbPb_cleaned.root"
+# repaired/PbPb_repaired_RR2.root
+
 input_ppdata = "user.mrybar.pp_MC_P8_ForPatrik_r004_deriv_ANALYSIS.root"
 
 #"user.mrybar.pp_MC_ForPatrik_r002_ANALYSIS.root"
@@ -27,10 +31,10 @@ treeName = "AntiKt4HI"
 output_folder = "/mnt/scratch1/novotnyp/results/"
 run_number = 7122022
 
-doCompile = False # flag variable declaring, which macros should be compiled and which not
-doSelection = False # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
+doCompile = True # flag variable declaring, which macros should be compiled and which not
+doSelection = True # flag specifying whether to do a new selection or use preprocessed pp and PbPb data
 calculateStats = False # flag specifying whether to do calculate statistical quantities or not
-doML_training = True # flag specifying, whether ML training (on pp samples) should be done
+doML_training = False # flag specifying, whether ML training (on pp samples) should be done
 doML_testing = False # flag specifying, whether ML testing (on PbPb samples) should be done
 
 if __name__ == '__main__':
@@ -59,22 +63,21 @@ if __name__ == '__main__':
 		from ROOT import Selection
 		from ROOT import Variables
 		
-			
+		"""	
                 # FORM SCALAR SAMPLE
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
-		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/Py_train.root")
+		pp_selection.FormScalarSample("/mnt/scratch1/novotnyp/data/pp_class_train_extended_geo_2_abs_eta.root")
 		pp_selection.SetBranchAddress()
 		pp_selection.FormTrainingSample()
 		pp_selection.Write()
-		
-
+		"""
 		"""
                 # pp SELECTION
 		pp_selection = Selection(input_folder+input_ppdata, treeName, "pp")
 		pp_selection.SetBranchAddress()
 		pp_selection.BookHistograms()
 		pp_selection.EventLoop()
-		pp_selection.Write(output_folder+"pp_inclusive_quark_P8_log_bins")
+		pp_selection.Write(output_folder+"pp_test")
 		"""
 	
 		"""
@@ -83,15 +86,13 @@ if __name__ == '__main__':
 		pp_selection.SetBranchAddress()
 		pp_selection.CalcRMSE()
 		"""
-
-		"""
+		
 		# PbPb SELECTION
 		PbPb_selection = Selection(input_folder+input_PbPbdata, treeName, "PbPb")
 		PbPb_selection.SetBranchAddress()
-                PbPb_selection.BookHistograms()
-                PbPb_selection.EventLoop()
-                PbPb_selection.Write(output_folder+"PbPb_preselection")
-		"""	
+		PbPb_selection.BookHistograms()
+		PbPb_selection.EventLoop(10000)
+		PbPb_selection.Write(output_folder+"PbPb_preselection")			
 		
 		"""
 		# PbPb CALCULATE RMSE		
@@ -132,7 +133,7 @@ if __name__ == '__main__':
 	if doML_testing:
 		outdir = output_folder+"model/"
 		input_PbPbdata = "PbPb_cleaned.root"
-		list_of_input_branches = ["jet_eta", "jet_pt", "jet_ntrk", "jet_N90"]
-		predict(input_folder, input_PbPbdata,  outdir, "alpha_regress", list_of_input_branches, "regressor")
+		list_of_input_branches = ["jet_eta", "jet_pt", "jet_ntrk", "jet_N90", "jet_SumPtTrk"]
+		predict(input_folder, input_PbPbdata,  outdir, "imbalanced_Forest_class_Py", list_of_input_branches, "classifier")
 
 # ROC curve a integral z nej -> zajimave pro klasifikaci ?

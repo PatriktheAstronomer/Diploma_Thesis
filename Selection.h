@@ -41,6 +41,7 @@ public:
 	std::vector<Float_t> * jet_SumPtTrk = 0;
 	std::vector<std::vector<Float_t>> *  jet_EnergyPerSampling = 0;
 	std::vector<Float_t> * jet_N90 = 0;
+	std::vector<Float_t> * corr_jet_pt = 0;
 	std::vector<Float_t> * truth_jet_pt = 0;
 	std::vector<Float_t> * truth_jet_flavor = 0;
         Float_t jet_eta_scalar;
@@ -51,7 +52,20 @@ public:
 	Float_t jet_N90_scalar;
 	Float_t jet_response_scalar;
 	Float_t truth_jet_pt_scalar;
-        Int_t truth_jet_flavor_scalar;
+        Float_t truth_jet_flavor_scalar;
+
+	// extended_1
+	Float_t jet_peta_scalar;
+
+	// geometrical variables
+	Float_t jet_EMB_fraction;
+	Float_t jet_EME_fraction;
+	Float_t jet_HEC_fraction;
+	Float_t jet_TILE_fraction;
+	Float_t jet_FCAL_fraction;
+
+	Float_t jet_TILE_BAR_fraction;
+	Float_t jet_TILE_EXTENDED_fraction;
 
 	TH3F * h_3F = nullptr;
 	std::vector<std::vector<TH3F*>> responseCentrVars;
@@ -117,13 +131,13 @@ public:
 	void GetTTree();
 
 	void FormScalarSample(TString outname);	
-	void SetBranchAddress();
+	void SetBranchAddress(std::vector<TString> list_of_branches_to_activate = {""});
 	void CreateBranchScalar();
 	void BookHistograms();
 	void EventLoop(Long64_t nEntries = 0);
 	void FormTrainingSample(Long64_t nEntries = 0);
-	void CalcRMSE(Float_t jetPtVeto = 0);
-	void Write(string outfile = "");
+	void CalcRMSE(Float_t jetPtVeto = 0, bool corrected_file = 0);
+	void Write(string outName = "");
 };
 
 
